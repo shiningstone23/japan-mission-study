@@ -1,0 +1,18 @@
+[build]
+  publish = "."
+
+[[headers]]
+  for = "/terriermon-sw.js"
+    [headers.values]
+    Service-Worker-Allowed = "/"
+    Cache-Control = "no-store"
+
+[[headers]]
+  for = "/*.html"
+    [headers.values]
+    Cache-Control = "no-store"
+
+[[redirects]]
+  from = "/*"
+  to = "/japan_mission_study.html"
+  status = 200
