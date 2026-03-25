@@ -2657,9 +2657,35 @@ function renderReviewCard() {
    QUIZ RENDER FUNCTIONS (타입별)
 ═══════════════════════════════════════════ */
 
+// 중복 보기 제거 헬퍼: correct 보기를 유지하고 중복 오답은 다른 문항 풀에서 대체
+function dedupChoices(q) {
+  const choices = [...q.choices];
+  const correct = q.correct;
+  const seen = new Set();
+  seen.add(choices[correct]); // 정답 먼저 등록
+  const pool = LESSONS.flatMap(l => l.questions)
+    .filter(pq => pq.jp !== q.jp)
+    .flatMap(pq => pq.choices)
+    .filter(c => !seen.has(c));
+  let pi = 0;
+  for (let i = 0; i < choices.length; i++) {
+    if (i === correct) continue;
+    if (seen.has(choices[i])) {
+      // 중복 오답 → 풀에서 대체
+      while (pi < pool.length && seen.has(pool[pi])) pi++;
+      choices[i] = pool[pi] || '—';
+      pi++;
+    }
+    seen.add(choices[i]);
+  }
+  return { choices, correct };
+}
+
 function renderMCQ(q) {
   const total = S.questions.length;
   const keys = ['A','B','C','D'];
+  const { choices: dc, correct: dcIdx } = dedupChoices(q);
+  q = Object.assign({}, q, { choices: dc, correct: dcIdx });
   const shuffled = [0,1,2,3].sort(()=>Math.random()-.5);
   const correctChoice = q.choices[q.correct];
   const body = document.getElementById('quiz-body');
@@ -2735,6 +2761,8 @@ function renderReverse(q) {
 function renderFill(q) {
   const total = S.questions.length;
   const keys = ['A','B','C','D'];
+  const { choices: dc, correct: dcIdx } = dedupChoices(q);
+  q = Object.assign({}, q, { choices: dc, correct: dcIdx });
   const shuffled = [0,1,2,3].sort(()=>Math.random()-.5);
   const correctChoice = q.choices[q.correct];
   const body = document.getElementById('quiz-body');
