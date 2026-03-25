@@ -1866,6 +1866,15 @@ body{
       <div id="users-list"></div>
     </div>
 
+    <!-- Reset My Data -->
+    <div class="settings-section">
+      <div class="ss-header">⚠️ 데이터 관리</div>
+      <div class="settings-row" style="flex-direction:column;align-items:flex-start;gap:8px;">
+        <div style="font-size:13px;color:var(--text2);line-height:1.5;">내 학습 데이터(XP, 스트릭, 진행도 등)를 초기화합니다.<br>이 작업은 되돌릴 수 없어요.</div>
+        <button onclick="resetMyData()" style="padding:10px 18px;border-radius:10px;border:none;background:#FF4B4B;color:#fff;font-size:14px;font-weight:800;cursor:pointer;">🗑️ 내 데이터 초기화</button>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -3054,6 +3063,24 @@ function renderSettings() {
   }
 }
 
+function resetMyData() {
+  if(!confirm('내 학습 데이터를 초기화할까요?\nXP, 스트릭, 진행도가 모두 삭제됩니다.')) return;
+  // 로컬 데이터 삭제
+  saveUserProgress(CU.uid, null);
+  // Firebase 데이터 삭제
+  if(_db && CU.uid) _db.ref(`team/${CU.uid}`).remove();
+  // 상태 초기화
+  S.streak=0; S.lastStreakDate=''; S.xp=0; S.hearts=5; S.maxHearts=5;
+  S.todayXP=0; S.weekDone=[false,false,false,false,false,false,false];
+  S.weekStartDate=getWeekStartDate(); S.allCompleted=new Set();
+  S.completedToday=new Set(); S.lessonStars={}; S.titles=new Set();
+  S.openedChests=new Set(); S.gems=0; S.streakShield=false; S.couponRevealed=false;
+  persistProgress();
+  renderHome();
+  goTo('home');
+  showToast('🗑️ 데이터 초기화 완료', '처음부터 다시 시작해요!', 'success');
+}
+
 function toggleCat(id, el) {
   if(S.enabledCats.has(id)) {
     if(S.enabledCats.size<=1){showToast('⚠️ 최소 1개는 활성화해야 해요','','warning');return;}
@@ -3690,11 +3717,11 @@ function getWeekStartDate() {
   return d.toDateString();
 }
 
-const DATA_VERSION = 'v2'; // 버전 변경 시 모든 기기 로컬 데이터 자동 초기화
+const DATA_VERSION = 'v3'; // 버전 변경 시 모든 기기 로컬 데이터 자동 초기화
+const VERSION_KEY  = 'missionJP_ver'; // progress 스냅샷과 별도 키 (persistProgress에 덮이지 않음)
 
 function buildProgressSnapshot() {
   return {
-    dataVersion: DATA_VERSION,
     streak:S.streak, lastStreakDate:S.lastStreakDate, xp:S.xp, hearts:S.hearts, maxHearts:S.maxHearts,
     todayXP:S.todayXP, dailyGoal:S.dailyGoal,
     weekDone:S.weekDone,
@@ -3804,9 +3831,12 @@ function loginAs(uid, name) {
   CU = { uid, name };
   setCurrentSession(uid);
   let saved = loadUserProgress(uid);
-  // 데이터 버전이 다르면 로컬 데이터 무시 → 초기화
-  if(saved && saved.dataVersion !== DATA_VERSION) {
-    saveUserProgress(uid, null);
+  // 버전 체크: progress 스냅샷 외부 키로 확인 (persistProgress에 덮이지 않음)
+  const storedVer = localStorage.getItem(VERSION_KEY);
+  if(storedVer !== DATA_VERSION) {
+    // 버전 불일치 → 전체 초기화
+    PRESET_ACCOUNTS.forEach(a => saveUserProgress(a.id, null));
+    localStorage.setItem(VERSION_KEY, DATA_VERSION);
     saved = null;
   }
   if(saved) {
