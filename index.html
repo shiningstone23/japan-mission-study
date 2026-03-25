@@ -3009,7 +3009,8 @@ function showResult(finished) {
     // 메모리(S)가 아닌 localStorage에서 직접 읽어 비교 → 같은 날 중복 카운팅 방지
     const _saved = loadUserProgress(CU.uid) || {};
     const _lastSD = _saved.lastStreakDate || S.lastStreakDate || '';
-    if(S.todayXP >= S.dailyGoal && _lastSD !== todayStr) {
+    // 레슨 1개 완료 = 오늘 학습 인정 (일일 목표 XP와 무관하게 스트릭 카운트)
+    if(_lastSD !== todayStr) {
       // 어제 학습 → 연속 유지, 그 외(오래됐거나 처음) → 1로 리셋
       S.streak = (_lastSD === yesterdayStr) ? S.streak + 1 : 1;
       S.lastStreakDate = todayStr;
