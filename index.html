@@ -2974,6 +2974,23 @@ function quitQuiz() {
 /* ═══════════════════════════════════════════
    RESULT
 ═══════════════════════════════════════════ */
+function checkDailyFirst(xpEarned) {
+  // 오늘 첫 XP 획득이 아니면 스킵
+  if ((S.todayXP - xpEarned) > 0) return;
+  const today = new Date().toDateString();
+  // 다른 팀원이 오늘 이미 공부했는지 확인 (Firebase 데이터 기준)
+  const othersStudied = Object.entries(_teamData).some(([uid, data]) =>
+    uid !== CU.uid && data.lastStudied === today && (data.todayXP || 0) > 0
+  );
+  if (othersStudied) return;
+  // 🥇 오늘 1등!
+  S.gems += 10;
+  setTimeout(() => {
+    showToast('🥇 오늘 1등!', '팀에서 가장 먼저 공부했어요! 💎 보석 10개 획득!', 'success');
+    showMascot('excited', '오늘의 1등! 🥇', '팀에서 제일 먼저 공부했어요!\n보석 10개를 드려요! 💎✨', 'bounce', 5000);
+  }, 1200);
+}
+
 function showResult(finished) {
   const total = S.questions.length;
   const xpEarned = finished ? Math.round((S.score/total)*20 + 10) : Math.round((S.score/total)*10);
@@ -3011,6 +3028,7 @@ function showResult(finished) {
       }
     }
   }
+  checkDailyFirst(xpEarned);
   persistProgress();
   updateSWStatus();    // 공부 완료 → SW에 상태 전달
   pushMyProgress();    // Firebase에 진행상황 업로드
