@@ -4092,7 +4092,10 @@ function loginAs(uid, name) {
     S.notifEnabled=true; S.notifTime='09:00';
     S.darkMode=false; S.sound=true; S.qCount=5;
     S.enabledCats=new Set(['greet','intro','faith','mission','lords','creed','gospel','praise']);
+    S.lastHeartRefillDate = new Date().toDateString(); // 초기화 시 오늘 날짜 기록
   }
+  // 로그인 직후 항상 저장 → Firebase sync가 lastHeartRefillDate를 '' 로 덮어쓰는 것 방지
+  persistProgress();
   // 선교대원 2호: 교회 생활(day21)부터 시작 — 이전 레슨 자동 완료 처리
   if (uid === 'japan02') {
     const startFrom = 'day21';
