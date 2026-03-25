@@ -3313,6 +3313,7 @@ function setQCount(val) {
     c.classList.toggle('selected', parseInt(c.dataset.q)===val);
   });
   showToast('📝 문제 수가 변경됐어요!', `레슨당 ${val}문제로 설정됐습니다`,'success');
+  persistProgress();
 }
 
 function toggleDark() {
@@ -3329,6 +3330,7 @@ function toggleSound() {
   if(S.sound) st.classList.add('on'); else st.classList.remove('on');
   if(S.sound) showToast('🔊 효과음 켜짐','','success');
   else showToast('🔇 효과음 꺼짐','','');
+  persistProgress();
 }
 
 /* ═══════════════════════════════════════════
@@ -4405,7 +4407,10 @@ function restoreFromFirebase() {
       if(data.notifTime)           S.notifTime       = data.notifTime;
       if(data.notifEnabled    !== undefined) S.notifEnabled    = data.notifEnabled;
       if(data.sound           !== undefined) S.sound           = data.sound;
-      if(data.darkMode        !== undefined) S.darkMode        = data.darkMode;
+      if(data.darkMode        !== undefined) {
+        S.darkMode = data.darkMode;
+        document.documentElement.setAttribute('data-theme', S.darkMode?'dark':'light');
+      }
       if(data.qCount          !== undefined) S.qCount          = data.qCount;
       persistProgress();  // localStorage에도 저장
       renderHome();       // 화면 업데이트
