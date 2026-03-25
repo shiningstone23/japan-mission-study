@@ -166,6 +166,16 @@ body{
 .badge-chip .badge-icon{font-size:16px;}
 .badge-empty{color:var(--text2);font-size:13px;text-align:center;padding:14px 0 4px;line-height:1.6;}
 .chest-label{font-size:12px;font-weight:700;color:var(--text);text-align:center;}
+/* Path Gem Chest (레슨 사이 미니 보석 상자) */
+.path-gem-row{display:flex;justify-content:center;padding:4px 0 4px;}
+.path-gem-chest{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 20px;border-radius:14px;cursor:pointer;transition:transform .15s;border:2px dashed #E0E0E0;}
+.path-gem-chest:active{transform:scale(.95);}
+.path-gem-chest.ready{border:2px solid #1CB0F6;background:#E8F7FF;animation:gemChestPulse 2s ease infinite;}
+.path-gem-chest.opened{border:2px solid #BDBDBD;background:var(--bg2);cursor:default;opacity:.6;}
+.path-gem-chest.locked{opacity:.4;cursor:default;}
+.path-gem-icon{font-size:28px;line-height:1;}
+.path-gem-label{font-size:11px;font-weight:700;color:var(--text2);}
+@keyframes gemChestPulse{0%,100%{box-shadow:0 0 0 0 rgba(28,176,246,.4)}50%{box-shadow:0 0 0 8px rgba(28,176,246,0)}}
 
 /* Shop Modal */
 .shop-modal-overlay{
@@ -2046,6 +2056,7 @@ const S = {
   lessonStars: {},  // lessonId → 0,1,2,3
   titles: new Set(),        // earned title strings
   openedChests: new Set(),  // 'chest1'...'chest8' + 'chestExtra'
+  pathChests: new Set(),    // 'pgem_1_0', 'pgem_1_1', ... (경로 미니 보석 상자)
   gems: 0,
   streakShield: false,
   couponRevealed: false,
@@ -2189,6 +2200,18 @@ function getUnitForLesson(lessonId) {
   return l ? l.unit : null;
 }
 
+/* ─── PATH GEM CHEST ─── */
+function collectPathChest(pgId) {
+  if(S.pathChests.has(pgId)) return;
+  S.pathChests.add(pgId);
+  const gems = 5 + Math.floor(Math.random() * 11); // 5~15개
+  S.gems += gems;
+  updateTopbar();
+  persistProgress();
+  renderHome();
+  showToast('💎 보석 획득!', `경로 보석 ${gems}개를 받았어요!`, 'success');
+}
+
 /* ─── CHEST & TITLE SYSTEM ─── */
 function openChest(chestId) {
   const unit = UNITS.find(u => u.chestId === chestId);
@@ -2323,6 +2346,24 @@ function renderJourney() {
         ${!isLeft ? mascotHtml : ''}
       `;
       wrap.appendChild(nodeEl);
+
+      // 레슨 3개마다 미니 보석 상자 삽입 (li=2,5,8,...)
+      if((li + 1) % 3 === 0 && li < unitLessons.length - 1) {
+        const pgId = `pgem_${unit.no}_${Math.floor(li / 3)}`;
+        const pgOpened = S.pathChests.has(pgId);
+        // 해당 레슨까지 모두 완료해야 열림
+        const pgUnlocked = unitLessons.slice(0, li + 1).every(id => S.allCompleted.has(id));
+        const pgEl = document.createElement('div');
+        pgEl.className = 'path-gem-row';
+        pgEl.innerHTML = `
+          <div class="path-gem-chest ${pgOpened ? 'opened' : pgUnlocked ? 'ready' : 'locked'}"
+               onclick="${pgUnlocked && !pgOpened ? `collectPathChest('${pgId}')` : ''}">
+            <div class="path-gem-icon">${pgOpened ? '✅' : '💎'}</div>
+            <div class="path-gem-label">${pgOpened ? '획득 완료' : pgUnlocked ? '보석 상자!' : '🔒 잠김'}</div>
+          </div>
+        `;
+        wrap.appendChild(pgEl);
+      }
     });
 
     // Treasure chest at end of unit
@@ -3086,7 +3127,7 @@ function resetMyData() {
   S.todayXP=0; S.weekDone=[false,false,false,false,false,false,false];
   S.weekStartDate=getWeekStartDate(); S.allCompleted=new Set();
   S.completedToday=new Set(); S.lessonStars={}; S.titles=new Set();
-  S.openedChests=new Set(); S.gems=0; S.streakShield=false; S.couponRevealed=false;
+  S.openedChests=new Set(); S.pathChests=new Set(); S.gems=0; S.streakShield=false; S.couponRevealed=false;
   persistProgress();
   renderHome();
   goTo('home');
@@ -3745,6 +3786,7 @@ function buildProgressSnapshot() {
     lessonStars: S.lessonStars,
     titles: [...S.titles],
     openedChests: [...S.openedChests],
+    pathChests: [...S.pathChests],
     couponRevealed: S.couponRevealed,
     gems: S.gems,
     streakShield: S.streakShield,
@@ -3777,6 +3819,7 @@ function applyProgressSnapshot(snap) {
   S.lessonStars = snap.lessonStars ?? {};
   S.titles = new Set(snap.titles ?? []);
   S.openedChests = new Set(snap.openedChests ?? []);
+  S.pathChests = new Set(snap.pathChests ?? []);
   S.couponRevealed = snap.couponRevealed ?? false;
   S.gems = snap.gems ?? 0;
   S.streakShield = snap.streakShield ?? false;
