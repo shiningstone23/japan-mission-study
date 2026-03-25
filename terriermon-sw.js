@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mission-jp-v8';
+const CACHE_NAME = 'mission-jp-v9';
 const CACHE_FILES = [
   '/',
   '/japan-mission-study/',
