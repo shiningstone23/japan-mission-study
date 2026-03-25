@@ -3449,8 +3449,15 @@ function loginAs(uid, name) {
   const saved = loadUserProgress(uid);
   if(saved) {
     const savedDay = saved.savedAt ? new Date(saved.savedAt).toDateString() : '';
-    const today = new Date().toDateString();
+    const today    = new Date().toDateString();
+    const yesterday= new Date(Date.now() - 86400000).toDateString();
     if(savedDay !== today) saved.todayXP = 0;
+    // 마지막 스트릭 날짜가 어제도 오늘도 아니면 스트릭 리셋
+    const lsd = saved.lastStreakDate || '';
+    if(lsd && lsd !== today && lsd !== yesterday) {
+      saved.streak = 0;
+      saved.lastStreakDate = '';
+    }
     applyProgressSnapshot(saved);
   } else {
     S.streak=0; S.lastStreakDate=''; S.xp=0; S.hearts=5; S.maxHearts=5;
@@ -3671,12 +3678,20 @@ function restoreFromFirebase() {
   _db.ref(`team/${CU.uid}`).once('value', snap => {
     const data = snap.val();
     // xp > 0 조건 제거: ts 기준으로 기존 데이터 존재 여부 확인 (xp=0 데이터도 복원)
-    if(data && data.ts) {
-      // Firebase에 기존 데이터가 있으면 복원
+    if(data && data.ts && (data.xp > 0 || data.streak > 0)) {
+      // Firebase에 유효한 데이터가 있으면 복원
       S.xp = data.xp || 0;
-      S.streak = data.streak || 0;
-      const today = new Date().toDateString();
-      S.todayXP = (data.lastStudied === today) ? (data.todayXP || 0) : 0;
+      // 스트릭 유효성 검사: 마지막 학습일이 어제/오늘이 아니면 리셋
+      const today     = new Date().toDateString();
+      const yesterday = new Date(Date.now() - 86400000).toDateString();
+      const lastStudied = data.lastStudied || '';
+      if(lastStudied && lastStudied !== today && lastStudied !== yesterday) {
+        S.streak = 0;
+        S.lastStreakDate = '';
+      } else {
+        S.streak = data.streak || 0;
+      }
+      S.todayXP = (lastStudied === today) ? (data.todayXP || 0) : 0;
       persistProgress();  // localStorage에도 저장
       renderHome();       // 화면 업데이트
       pushMyProgress();   // 복원된 데이터로 Firebase 업데이트
@@ -3878,10 +3893,9 @@ function renderTop3(members) {
   members.slice(0,3).forEach((m,i) => {
     const card = document.createElement('div');
     card.className = `top3-card ${medals[i]}`;
-    // "선교대원 N호" 기본 이름에서 "호" 제거, 닉네임 변경 시 그대로 사용
-    const shortName = /^선교대원\s*\d+호$/.test(m.name)
-      ? m.name.replace(/호$/, '').trim()
-      : m.name;
+    // 기본 이름 "선교대원 N호" → "대원N"으로 축약, 변경된 닉네임은 그대로
+    const m0 = m.name.match(/^선교대원\s*(\d+)호$/);
+    const shortName = m0 ? `대원${m0[1]}` : m.name;
     card.innerHTML = `
       <div class="top3-medal">${emojis[i]}</div>
       <div class="top3-name">${m.isMe ? '나 ('+shortName+')' : shortName}</div>
