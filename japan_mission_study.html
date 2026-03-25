@@ -167,6 +167,50 @@ body{
 .badge-empty{color:var(--text2);font-size:13px;text-align:center;padding:14px 0 4px;line-height:1.6;}
 .chest-label{font-size:12px;font-weight:700;color:var(--text);text-align:center;}
 
+/* Shop Modal */
+.shop-modal-overlay{
+  display:none;position:fixed;inset:0;z-index:200;
+  background:rgba(0,0,0,.55);
+  align-items:center;justify-content:center;
+}
+.shop-modal{
+  background:var(--card);border-radius:24px;padding:28px 24px;
+  max-width:340px;width:92%;
+  box-shadow:0 8px 32px rgba(0,0,0,.25);
+}
+.shop-modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+.shop-modal-title{font-size:18px;font-weight:800;color:var(--text);}
+.shop-modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--text2);padding:4px;}
+.shop-gem-balance{
+  display:flex;align-items:center;gap:6px;
+  background:var(--bg2);border-radius:12px;
+  padding:10px 16px;margin-bottom:20px;
+  font-size:14px;font-weight:700;color:var(--text);
+}
+.shop-gem-balance .gem-big{font-size:22px;}
+.shop-items{display:flex;flex-direction:column;gap:12px;}
+.shop-item{
+  display:flex;align-items:center;gap:14px;
+  background:var(--bg2);border-radius:16px;padding:14px 16px;
+}
+.shop-item-icon{font-size:32px;flex-shrink:0;}
+.shop-item-info{flex:1;}
+.shop-item-name{font-size:14px;font-weight:800;color:var(--text);margin-bottom:2px;}
+.shop-item-desc{font-size:12px;color:var(--text2);}
+.shop-item-badge{
+  display:inline-block;margin-top:4px;padding:2px 8px;
+  border-radius:8px;font-size:11px;font-weight:700;
+  background:#E8F5E9;color:#2E7D32;
+}
+.shop-buy-btn{
+  flex-shrink:0;display:flex;align-items:center;gap:4px;
+  background:var(--green);color:#fff;border:none;
+  border-radius:12px;padding:8px 14px;
+  font-size:13px;font-weight:800;cursor:pointer;
+  white-space:nowrap;
+}
+.shop-buy-btn:disabled{background:#BDBDBD;cursor:not-allowed;}
+.shop-buy-btn .btn-gem{font-size:14px;}
 /* Title Award Modal */
 .title-modal-overlay{
   display:none;position:fixed;inset:0;z-index:200;
@@ -1286,12 +1330,53 @@ body{
 <!-- TOAST CONTAINER -->
 <div class="toast-container" id="toastContainer"></div>
 
+<!-- Shop Modal -->
+<div class="shop-modal-overlay" id="shop-modal" onclick="if(event.target===this)closeShop()">
+  <div class="shop-modal">
+    <div class="shop-modal-header">
+      <div class="shop-modal-title">💎 상점</div>
+      <button class="shop-modal-close" onclick="closeShop()">✕</button>
+    </div>
+    <div class="shop-gem-balance">
+      <span class="gem-big">💎</span>
+      <span>보유 보석:</span>
+      <span id="shop-gem-count" style="color:#1CB0F6;font-size:16px;">0</span>
+      <span>개</span>
+    </div>
+    <div class="shop-items">
+      <div class="shop-item">
+        <div class="shop-item-icon">❤️</div>
+        <div class="shop-item-info">
+          <div class="shop-item-name">하트 충전</div>
+          <div class="shop-item-desc">하트를 5개로 완전 충전</div>
+          <div class="shop-item-badge" id="hearts-status">현재 하트: 5개</div>
+        </div>
+        <button class="shop-buy-btn" id="buy-hearts-btn" onclick="buyHearts()">
+          <span class="btn-gem">💎</span> 350
+        </button>
+      </div>
+      <div class="shop-item">
+        <div class="shop-item-icon">🛡️</div>
+        <div class="shop-item-info">
+          <div class="shop-item-name">연속 방패</div>
+          <div class="shop-item-desc">하루 빠져도 연속 일수 보호</div>
+          <div class="shop-item-badge" id="shield-status">미장착</div>
+        </div>
+        <button class="shop-buy-btn" id="buy-shield-btn" onclick="buyShield()">
+          <span class="btn-gem">💎</span> 200
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Title Award Modal -->
 <div class="title-modal-overlay" id="title-modal" onclick="if(event.target===this)closeTitleModal()">
   <div class="title-modal-box">
     <div class="title-modal-emoji">🎁</div>
     <div class="title-modal-header">🏆 새 타이틀 획득!</div>
     <div class="title-modal-title-text" id="title-modal-text"></div>
+    <div id="title-modal-gems" style="font-size:15px;font-weight:700;color:#1CB0F6;margin-bottom:16px;"></div>
     <button class="title-modal-btn" onclick="closeTitleModal()">감사해요! 🐾</button>
   </div>
 </div>
@@ -1345,6 +1430,7 @@ body{
         <div class="stat-chip streak"><span class="icon">🔥</span><span id="stat-streak">3</span></div>
         <div class="stat-chip hearts"><span class="icon">❤️</span><span id="stat-hearts">5</span></div>
         <div class="stat-chip xp"><span class="icon">⚡</span><span id="stat-xp">240</span></div>
+        <div class="stat-chip" style="cursor:pointer;color:#1CB0F6;" onclick="openShop()" title="상점 열기"><span class="icon">💎</span><span id="stat-gems">0</span></div>
       </div>
       <div class="topbar-user" onclick="showProfile()" id="topbar-user-btn">
         <div class="user-avatar" id="topbar-avatar" style="background:#58CC02;">G</div>
@@ -1895,6 +1981,8 @@ const S = {
   lessonStars: {},  // lessonId → 0,1,2,3
   titles: new Set(),        // earned title strings
   openedChests: new Set(),  // 'chest1'...'chest8' + 'chestExtra'
+  gems: 0,
+  streakShield: false,
   couponRevealed: false,
   notifTimeout:null,
 };
@@ -1986,6 +2074,7 @@ function renderHome() {
   document.getElementById('stat-streak').textContent = S.streak + '일';
   document.getElementById('stat-hearts').textContent = S.hearts;
   document.getElementById('stat-xp').textContent = S.xp;
+  updateGemDisplay();
   document.getElementById('home-today-xp').textContent = S.todayXP;
   document.getElementById('home-goal-xp').textContent = S.dailyGoal;
   document.getElementById('home-goal-label').textContent = S.dailyGoal;
@@ -2051,13 +2140,21 @@ function openChest(chestId) {
     return;
   }
 
-  // Open the chest!
+  // Open the chest! — award gems per unit
+  const GEM_REWARDS = {
+    chest1:10, chest2:15, chest3:20, chest4:25,
+    chest5:30, chest6:35, chest7:50, chest8:60,
+    chestFinal:100, chestExtra:75
+  };
+  const gemReward = GEM_REWARDS[chestId] || 20;
   S.openedChests.add(chestId);
   S.titles.add(unit.chestTitle);
+  S.gems += gemReward;
   persistProgress();
+  updateGemDisplay();
 
-  // Show title award modal
-  showTitleAward(unit.chestTitle);
+  // Show title award modal (with gem reward info)
+  showTitleAward(unit.chestTitle, gemReward);
   renderJourney();
 
   // Special: if final chest, show coupon too
@@ -2066,10 +2163,12 @@ function openChest(chestId) {
   }
 }
 
-function showTitleAward(title) {
+function showTitleAward(title, gems) {
   const modal = document.getElementById('title-modal');
   if(!modal) return;
   document.getElementById('title-modal-text').textContent = title;
+  const gemEl = document.getElementById('title-modal-gems');
+  if(gemEl) gemEl.textContent = gems ? `💎 +${gems} 보석 획득!` : '';
   modal.style.display = 'flex';
   spawnConfetti();
 }
@@ -2748,6 +2847,8 @@ function renderStats() {
         <div class="sg-item"><div class="sg-val" style="color:#58CC02">⚡ ${S.xp}</div><div class="sg-lbl">총 XP</div></div>
         <div class="sg-item"><div class="sg-val" style="color:#1CB0F6">📚 ${LESSONS.filter(l=>!l.comingSoon).length}</div><div class="sg-lbl">전체 레슨</div></div>
         <div class="sg-item"><div class="sg-val" style="color:#CE82FF">✅ ${S.allCompleted.size}</div><div class="sg-lbl">완료 레슨</div></div>
+        <div class="sg-item" style="cursor:pointer;" onclick="openShop()"><div class="sg-val" style="color:#1CB0F6">💎 ${S.gems}</div><div class="sg-lbl">보석</div></div>
+        <div class="sg-item"><div class="sg-val">${S.streakShield ? '🛡️ 장착' : '🛡️ 없음'}</div><div class="sg-lbl">연속 방패</div></div>
       </div>
     </div>
     <div class="stats-card">
@@ -3371,6 +3472,67 @@ function playSound(type) {
 /* ═══════════════════════════════════════════
    GOSPEL TRACT
 ═══════════════════════════════════════════ */
+/* ═══════════════════════════════════════════
+   GEM SHOP
+═══════════════════════════════════════════ */
+function updateGemDisplay() {
+  const el = document.getElementById('stat-gems');
+  if(el) el.textContent = S.gems;
+}
+
+function openShop() {
+  const modal = document.getElementById('shop-modal');
+  if(!modal) return;
+  // 현재 상태 반영
+  document.getElementById('shop-gem-count').textContent = S.gems;
+  document.getElementById('hearts-status').textContent = `현재 하트: ${S.hearts}개`;
+  document.getElementById('shield-status').textContent = S.streakShield ? '🛡️ 장착 중' : '미장착';
+  document.getElementById('shield-status').style.background = S.streakShield ? '#E3F2FD' : '';
+  document.getElementById('shield-status').style.color = S.streakShield ? '#1565C0' : '';
+
+  const heartsFull = S.hearts >= S.maxHearts;
+  const heartsBtn = document.getElementById('buy-hearts-btn');
+  heartsBtn.disabled = S.gems < 350 || heartsFull;
+  heartsBtn.title = heartsFull ? '이미 최대 하트' : S.gems < 350 ? '보석이 부족해요' : '';
+
+  const shieldBtn = document.getElementById('buy-shield-btn');
+  shieldBtn.disabled = S.gems < 200 || S.streakShield;
+  shieldBtn.title = S.streakShield ? '이미 방패 장착 중' : S.gems < 200 ? '보석이 부족해요' : '';
+
+  modal.style.display = 'flex';
+}
+
+function closeShop() {
+  const modal = document.getElementById('shop-modal');
+  if(modal) modal.style.display = 'none';
+}
+
+function buyHearts() {
+  if(S.gems < 350) { showToast('💎 보석 부족', '보석이 부족해요! 보물 상자를 열어 보석을 모아보세요.', 'warning'); return; }
+  if(S.hearts >= S.maxHearts) { showToast('❤️ 이미 최대', '하트가 이미 꽉 찼어요!', 'warning'); return; }
+  S.gems -= 350;
+  S.hearts = S.maxHearts;
+  persistProgress();
+  pushMyProgress();
+  updateGemDisplay();
+  closeShop();
+  showToast('❤️ 하트 충전 완료!', `하트가 ${S.maxHearts}개로 충전됐어요! 💎 -350`, 'success');
+  renderHome();
+}
+
+function buyShield() {
+  if(S.gems < 200) { showToast('💎 보석 부족', '보석이 부족해요! 보물 상자를 열어 보석을 모아보세요.', 'warning'); return; }
+  if(S.streakShield) { showToast('🛡️ 이미 장착 중', '연속 방패가 이미 장착되어 있어요!', 'warning'); return; }
+  S.gems -= 200;
+  S.streakShield = true;
+  persistProgress();
+  pushMyProgress();
+  updateGemDisplay();
+  closeShop();
+  showToast('🛡️ 방패 장착 완료!', '연속 일수를 하루 쉬어도 보호해줘요! 💎 -200', 'success');
+  showMascot('excited', '🛡️ 방패 장착!', '하루 쉬어도 연속 일수가 지켜져요!', 'bounce', 3500);
+}
+
 function showGospelTract() {
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
@@ -3457,6 +3619,8 @@ function buildProgressSnapshot() {
     titles: [...S.titles],
     openedChests: [...S.openedChests],
     couponRevealed: S.couponRevealed,
+    gems: S.gems,
+    streakShield: S.streakShield,
     savedAt: Date.now()
   };
 }
@@ -3487,6 +3651,8 @@ function applyProgressSnapshot(snap) {
   S.titles = new Set(snap.titles ?? []);
   S.openedChests = new Set(snap.openedChests ?? []);
   S.couponRevealed = snap.couponRevealed ?? false;
+  S.gems = snap.gems ?? 0;
+  S.streakShield = snap.streakShield ?? false;
   document.documentElement.setAttribute('data-theme', S.darkMode?'dark':'light');
 }
 
@@ -3555,11 +3721,20 @@ function loginAs(uid, name) {
     const today    = new Date().toDateString();
     const yesterday= new Date(Date.now() - 86400000).toDateString();
     if(savedDay !== today) saved.todayXP = 0;
-    // 마지막 스트릭 날짜가 어제도 오늘도 아니면 스트릭 리셋
+    // 마지막 스트릭 날짜가 어제도 오늘도 아니면 스트릭 리셋 (방패 체크)
     const lsd = saved.lastStreakDate || '';
     if(lsd && lsd !== today && lsd !== yesterday) {
-      saved.streak = 0;
-      saved.lastStreakDate = '';
+      const twoDaysAgo = new Date(Date.now() - 2 * 86400000).toDateString();
+      if(saved.streakShield && lsd === twoDaysAgo) {
+        // 방패 발동: 정확히 하루 빠진 경우에만 보호
+        saved.streakShield = false;
+        saved.lastStreakDate = yesterday; // 어제 한 것처럼 처리
+        setTimeout(() => showToast('🛡️ 연속 방패 발동!', `어제 쉬었지만 ${saved.streak}일 연속이 보호됐어요!`, 'success'), 1000);
+      } else {
+        saved.streak = 0;
+        saved.lastStreakDate = '';
+        saved.streakShield = false;
+      }
     }
     applyProgressSnapshot(saved);
   } else {
@@ -3795,6 +3970,8 @@ function pushMyProgress() {
     weekDone:       S.weekDone,
     weekStartDate:  S.weekStartDate || getWeekStartDate(),
     enabledCats:    [...S.enabledCats],
+    gems:           S.gems,
+    streakShield:   S.streakShield,
   });
 }
 
@@ -3812,13 +3989,24 @@ function restoreFromFirebase() {
       const yesterday = new Date(Date.now() - 86400000).toDateString();
       const lastStreakDate = data.lastStreakDate || data.lastStudied || '';
       if(lastStreakDate && lastStreakDate !== today && lastStreakDate !== yesterday) {
-        // 연속이 끊김 → 리셋
-        S.streak = 0;
-        S.lastStreakDate = '';
+        // 연속이 끊김 — 방패 체크
+        const twoDaysAgo = new Date(Date.now() - 2 * 86400000).toDateString();
+        if(data.streakShield && lastStreakDate === twoDaysAgo) {
+          S.streakShield = false;
+          S.streak = data.streak || 0;
+          S.lastStreakDate = yesterday;
+          setTimeout(() => showToast('🛡️ 연속 방패 발동!', `어제 쉬었지만 ${S.streak}일 연속이 보호됐어요!`, 'success'), 1000);
+        } else {
+          S.streak = 0;
+          S.lastStreakDate = '';
+          S.streakShield = false;
+        }
       } else {
         S.streak = data.streak || 0;
         S.lastStreakDate = lastStreakDate;
+        S.streakShield = data.streakShield ?? false;
       }
+      S.gems = data.gems || 0;
       const lastStudiedDate = data.lastStudied || lastStreakDate || '';
       S.todayXP = (lastStudiedDate === today) ? (data.todayXP || 0) : 0;
       // 학습 진행 데이터 복원 (빈 배열은 무시 → 기존 값 보호)
