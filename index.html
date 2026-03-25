@@ -2416,8 +2416,8 @@ function assignQuizTypes(questions) {
     let type = typeSeq[i % typeSeq.length];
     // arr: 분리 가능한 토큰이 2개 이상이어야 함
     if (type === 'arr' && tokenizeJp(q.jp).length < 2) type = 'mcq';
-    // fill: 발음(reading)이 있어야 함
-    if (type === 'fill' && !q.reading) type = 'rev';
+    // fill: 발음(reading)이 있고 보기(choices)가 일본어여야 함
+    if (type === 'fill' && (!q.reading || !q.choices.some(c => isJapaneseText(c)))) type = 'mcq';
     // rev: 한국어 의미가 추출 가능하고 일본어와 달라야 함
     if (type === 'rev') {
       const m = extractKoreanMeaning(q.q);
