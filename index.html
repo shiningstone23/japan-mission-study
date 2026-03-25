@@ -3714,11 +3714,11 @@ function pushMyProgress() {
     lastStudied:    lastStudied,
     lastStreakDate: S.lastStreakDate || '',
     ts:             Date.now(),
-    // 학습 진행 데이터 (기기 변경/URL 변경 시에도 복원 가능하도록)
-    allCompleted:   [...S.allCompleted],
-    lessonStars:    S.lessonStars || {},
-    titles:         [...S.titles],
-    openedChests:   [...S.openedChests],
+    // 학습 진행 데이터 (비어있으면 Firebase 기존 값 보호 위해 생략)
+    ...(S.allCompleted.size > 0  ? { allCompleted:  [...S.allCompleted]  } : {}),
+    ...(Object.keys(S.lessonStars||{}).length > 0 ? { lessonStars: S.lessonStars } : {}),
+    ...(S.titles.size > 0        ? { titles:        [...S.titles]        } : {}),
+    ...(S.openedChests.size > 0  ? { openedChests:  [...S.openedChests]  } : {}),
     weekDone:       S.weekDone,
     enabledCats:    [...S.enabledCats],
   });
@@ -3747,13 +3747,13 @@ function restoreFromFirebase() {
       }
       const lastStudiedDate = data.lastStudied || lastStreakDate || '';
       S.todayXP = (lastStudiedDate === today) ? (data.todayXP || 0) : 0;
-      // 학습 진행 데이터 복원
-      if(data.allCompleted)  S.allCompleted  = new Set(data.allCompleted);
-      if(data.lessonStars)   S.lessonStars   = data.lessonStars;
-      if(data.titles)        S.titles        = new Set(data.titles);
-      if(data.openedChests)  S.openedChests  = new Set(data.openedChests);
+      // 학습 진행 데이터 복원 (빈 배열은 무시 → 기존 값 보호)
+      if(data.allCompleted  && data.allCompleted.length  > 0) S.allCompleted  = new Set(data.allCompleted);
+      if(data.lessonStars   && Object.keys(data.lessonStars).length > 0) S.lessonStars = data.lessonStars;
+      if(data.titles        && data.titles.length        > 0) S.titles        = new Set(data.titles);
+      if(data.openedChests  && data.openedChests.length  > 0) S.openedChests  = new Set(data.openedChests);
       if(data.weekDone)      S.weekDone      = data.weekDone;
-      if(data.enabledCats)   S.enabledCats   = new Set(data.enabledCats);
+      if(data.enabledCats   && data.enabledCats.length   > 0) S.enabledCats   = new Set(data.enabledCats);
       persistProgress();  // localStorage에도 저장
       renderHome();       // 화면 업데이트
       pushMyProgress();   // 복원된 데이터로 Firebase 업데이트
