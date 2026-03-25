@@ -4151,6 +4151,8 @@ function doLogout() {
   S.allCompleted=new Set(); S.completedToday=new Set();
   S.lessonStars={}; S.titles=new Set(); S.openedChests=new Set(); S.pathChests=new Set();
   S.gems=0; S.streakShield=false; S.couponRevealed=false;
+  S.lastHeartRefillDate=''; S.maxHearts=5;
+  S.notifEnabled=true; S.notifTime='09:00'; S.sound=true; S.darkMode=false; S.qCount=5;
   S.enabledCats=new Set();
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
@@ -4334,11 +4336,19 @@ function pushMyProgress() {
     ...(S.titles.size > 0        ? { titles:        [...S.titles]        } : {}),
     ...(S.openedChests.size > 0  ? { openedChests:  [...S.openedChests]  } : {}),
     ...(S.pathChests.size > 0   ? { pathChests:    [...S.pathChests]    } : {}),
-    weekDone:       S.weekDone,
-    weekStartDate:  S.weekStartDate || getWeekStartDate(),
-    enabledCats:    [...S.enabledCats],
-    gems:           S.gems,
-    streakShield:   S.streakShield,
+    weekDone:           S.weekDone,
+    weekStartDate:      S.weekStartDate || getWeekStartDate(),
+    enabledCats:        [...S.enabledCats],
+    gems:               S.gems,
+    streakShield:       S.streakShield,
+    couponRevealed:     S.couponRevealed,
+    lastHeartRefillDate:S.lastHeartRefillDate || '',
+    maxHearts:          S.maxHearts,
+    notifTime:          S.notifTime,
+    notifEnabled:       S.notifEnabled,
+    sound:              S.sound,
+    darkMode:           S.darkMode,
+    qCount:             S.qCount,
   });
 }
 
@@ -4389,6 +4399,14 @@ function restoreFromFirebase() {
         : [false,false,false,false,false,false,false];
       S.weekStartDate = _curWeekStart;
       if(data.enabledCats   && data.enabledCats.length   > 0) S.enabledCats   = new Set(data.enabledCats);
+      if(data.couponRevealed  !== undefined) S.couponRevealed  = data.couponRevealed;
+      if(data.lastHeartRefillDate) S.lastHeartRefillDate = data.lastHeartRefillDate;
+      if(data.maxHearts       !== undefined) S.maxHearts       = data.maxHearts;
+      if(data.notifTime)           S.notifTime       = data.notifTime;
+      if(data.notifEnabled    !== undefined) S.notifEnabled    = data.notifEnabled;
+      if(data.sound           !== undefined) S.sound           = data.sound;
+      if(data.darkMode        !== undefined) S.darkMode        = data.darkMode;
+      if(data.qCount          !== undefined) S.qCount          = data.qCount;
       persistProgress();  // localStorage에도 저장
       renderHome();       // 화면 업데이트
       pushMyProgress();   // 복원된 데이터로 Firebase 업데이트
