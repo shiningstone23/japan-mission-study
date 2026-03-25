@@ -170,3 +170,27 @@ self.addEventListener('notificationclick', evt => {
     })
   );
 });
+
+/* =============================================
+   찌르기 푸시 수신 (앱 닫혀있을 때도 동작)
+   ============================================= */
+self.addEventListener('push', evt => {
+  if(!evt.data) return;
+  let data;
+  try { data = evt.data.json(); } catch(e) { return; }
+
+  evt.waitUntil(
+    self.registration.showNotification(data.title || '🐾 찌르기!', {
+      body:    data.body || '팀원이 메시지를 보냈어요.',
+      icon:    data.icon || '/japan-mission-study/megumi-icon.jpg',
+      badge:   '/japan-mission-study/megumi-icon.jpg',
+      tag:     data.tag || 'nudge',
+      renotify: true,
+      vibrate: [200, 100, 200],
+      data:    { url: '/japan-mission-study/' },
+      actions: [
+        { action: 'open', title: '📚 앱 열기' }
+      ]
+    })
+  );
+});

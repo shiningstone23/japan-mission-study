@@ -3468,6 +3468,8 @@ function loginAs(uid, name) {
   goTo('home');
   if(S.notifEnabled) scheduleNotification();   // 알림 켜져 있으면 재스케줄
   checkMissedStudy();                          // 어제 미공부 확인
+  // 웹 푸시 구독 등록 (찌르기 앱 푸시용)
+  registerPushSubscription();
   // Firebase 연결 & 팀 동기화
   if(initFirebase()) {
     subscribeTeam();
@@ -3701,6 +3703,7 @@ function subscribeTeam() {
 /* 찌르기 수신 구독 */
 function subscribeNudges() {
   if(!_db || !CU.uid) return;
+  registerPushSubscription();  // Firebase 연결 후 푸시 구독 재시도
   if(_nudgeListener) _nudgeListener.off();
   _nudgeListener = _db.ref(`nudges/${CU.uid}`);
   _nudgeListener.on('child_added', snap => {
@@ -3714,18 +3717,66 @@ function subscribeNudges() {
   });
 }
 
+/* 웹 푸시 구독 등록 */
+const VAPID_PUBLIC_KEY = 'BIHE46ACCPKUF1v6UCNRHHiU3bJgmF0ShLETbZg6NxmqhI4dmt6zRypfXChl4PGh0Fy0nvpM2-0XmFhFfvSzu-8';
+const PUSH_SERVER_URL  = 'https://jp-push-server.vercel.app/api/send-push';
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64  = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw     = atob(base64);
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+
+async function registerPushSubscription() {
+  if(!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  if(!_db || !CU.uid) return;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if(!sub) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      });
+    }
+    // Firebase에 내 구독 저장
+    _db.ref(`push_subs/${CU.uid}`).set(JSON.parse(JSON.stringify(sub)));
+  } catch(e) {
+    console.warn('Push subscription failed:', e);
+  }
+}
+
 /* 찌르기 전송 */
-function sendNudge(targetUid, targetName, message) {
+async function sendNudge(targetUid, targetName, message) {
   if(!_db) {
     showToast('⚠️ Firebase 미연결', '팀원 화면 상단의 연결하기 버튼을 눌러주세요', 'warning');
     return;
   }
+  // 1) Firebase에 찌르기 기록 (앱 열려있을 때용)
   _db.ref(`nudges/${targetUid}`).push({
     from:     CU.uid,
     fromName: CU.name,
     message,
     ts: Date.now(),
   });
+  // 2) 앱 푸시 전송 (앱 닫혀있을 때도 동작)
+  try {
+    const subSnap = await _db.ref(`push_subs/${targetUid}`).once('value');
+    const sub = subSnap.val();
+    if(sub) {
+      fetch(PUSH_SERVER_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subscription: sub,
+          title: `🐾 ${CU.name}이(가) 찌릅니다!`,
+          body: message,
+          icon: '/japan-mission-study/megumi-icon.jpg',
+        }),
+      }).catch(() => {});  // 실패해도 무시
+    }
+  } catch(e) {}
   closeNudge();
   showToast(`✈️ ${targetName}에게 전송!`, message, 'success');
   showMascot('excited', '찌르기 완료! 🐾', `${targetName}에게 메시지를 보냈어요!`, 'bounce', 3500);
