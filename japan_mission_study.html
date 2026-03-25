@@ -1936,7 +1936,7 @@ function updateMissionCountdown() {
 }
 
 function renderHome() {
-  document.getElementById('stat-streak').textContent = S.streak;
+  document.getElementById('stat-streak').textContent = S.streak + '일';
   document.getElementById('stat-hearts').textContent = S.hearts;
   document.getElementById('stat-xp').textContent = S.xp;
   document.getElementById('home-today-xp').textContent = S.todayXP;
@@ -2636,7 +2636,7 @@ function showResult(finished) {
     <div class="result-stats">
       <div class="rs-card"><div class="rs-val" style="color:#FFD900">+${xpEarned}</div><div class="rs-lbl">XP 획득</div></div>
       <div class="rs-card"><div class="rs-val" style="color:#58CC02">${S.score}/${total}</div><div class="rs-lbl">정답</div></div>
-      <div class="rs-card"><div class="rs-val" style="color:#FF9600">${S.streak}</div><div class="rs-lbl">연속 일수</div></div>
+      <div class="rs-card"><div class="rs-val" style="color:#FF9600">${S.streak}일</div><div class="rs-lbl">연속 학습</div></div>
     </div>
     <button class="result-btn" onclick="goTo('home')">홈으로</button>
     <button class="result-btn outline" style="margin-top:8px;" onclick="startLesson(S.lesson)">다시 풀기 🔄</button>
@@ -2793,7 +2793,11 @@ function renderSettings() {
         const isMe = CU.uid === uid;
         const prog = loadUserProgress(uid);
         const xp = prog ? prog.xp || 0 : 0;
-        const streak = prog ? prog.streak || 0 : 0;
+        // streak 날짜 검증: 마지막 스트릭 날짜가 오늘/어제가 아니면 0
+        const _today = new Date().toDateString();
+        const _yesterday = new Date(Date.now() - 86400000).toDateString();
+        const _lsd = prog ? (prog.lastStreakDate || '') : '';
+        const streak = (_lsd === _today || _lsd === _yesterday) ? (prog ? prog.streak || 0 : 0) : 0;
         return `<div class="user-row">
           <div class="ur-avatar" style="background:${color};">${initials}</div>
           <div class="ur-info">
@@ -3558,7 +3562,7 @@ function showProfile() {
   document.getElementById('profile-avatar-lg').textContent = initials;
   document.getElementById('profile-username').textContent = CU.name;
   document.getElementById('profile-role').textContent = '✝️ 선교 일본어 학습자';
-  document.getElementById('ps-streak').textContent = S.streak;
+  document.getElementById('ps-streak').textContent = S.streak + '일';
   document.getElementById('ps-xp').textContent = S.xp;
   document.getElementById('ps-done').textContent = S.allCompleted.size;
   const overlay = document.getElementById('profile-overlay');
@@ -3889,11 +3893,13 @@ function renderTeam() {
     const isMe   = a.id === CU.uid;
     const xp     = isMe ? S.xp       : (remote.xp     || 0);
     const todayXP= isMe ? S.todayXP  : (remote.todayXP|| 0);
-    const lastStudied = isMe ? today : (remote.lastStudied || '');
-    // streak 검증: 마지막 학습일이 오늘도 어제도 아니면 연속 끊김 → 0으로 표시
+    // 나: 실제 학습일 기준 (오늘 XP 있으면 today, 아니면 마지막 스트릭 날짜)
+    const lastStudied = isMe
+      ? (S.todayXP > 0 ? today : (S.lastStreakDate || ''))
+      : (remote.lastStudied || '');
+    // streak 검증: 나/다른 사람 모두 동일하게 마지막 학습일로 검증
     const rawStreak = isMe ? S.streak : (remote.streak || 0);
-    const streak = isMe ? rawStreak
-      : (lastStudied === today || lastStudied === yesterday ? rawStreak : 0);
+    const streak = (lastStudied === today || lastStudied === yesterday) ? rawStreak : 0;
     const name   = isMe ? CU.name    : (remote.name    || a.name);
     const doneToday   = todayXP > 0 && lastStudied === today;
     return { uid: a.id, name, xp, todayXP, streak, doneToday, isMe };
