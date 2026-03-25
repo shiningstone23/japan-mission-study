@@ -1,10 +1,12 @@
-const CACHE_NAME = 'mission-jp-v2';
+const CACHE_NAME = 'mission-jp-v3';
 const CACHE_FILES = [
   '/',
-  '/japan_mission_study.html',
-  '/manifest.json',
-  '/icon.svg',
-  '/megumi-icon.jpg',
+  '/japan-mission-study/',
+  '/japan-mission-study/index.html',
+  '/japan-mission-study/manifest.json',
+  '/japan-mission-study/megumi-face-192.png',
+  '/japan-mission-study/megumi-face-512.png',
+  '/japan-mission-study/megumi-icon.jpg',
 ];
 
 self.addEventListener('install', evt => {
