@@ -4326,7 +4326,8 @@ function pushMyProgress() {
   const today = new Date().toDateString();
   // lastStudied는 실제 학습한 날만 업데이트 (로그인만 해도 today로 덮어쓰지 않음)
   const lastStudied = S.todayXP > 0 ? today : (S.lastStreakDate || '');
-  _db.ref(`team/${CU.uid}`).set({
+  // update() 사용: 명시된 필드만 갱신하고 나머지는 보존 (set()은 전체 덮어쓰기로 데이터 손실 위험)
+  _db.ref(`team/${CU.uid}`).update({
     name:           CU.name,
     xp:             S.xp,
     todayXP:        S.todayXP,
@@ -4334,12 +4335,11 @@ function pushMyProgress() {
     lastStudied:    lastStudied,
     lastStreakDate: S.lastStreakDate || '',
     ts:             Date.now(),
-    // 학습 진행 데이터 (비어있으면 Firebase 기존 값 보호 위해 생략)
-    ...(S.allCompleted.size > 0  ? { allCompleted:  [...S.allCompleted]  } : {}),
-    ...(Object.keys(S.lessonStars||{}).length > 0 ? { lessonStars: S.lessonStars } : {}),
-    ...(S.titles.size > 0        ? { titles:        [...S.titles]        } : {}),
-    ...(S.openedChests.size > 0  ? { openedChests:  [...S.openedChests]  } : {}),
-    ...(S.pathChests.size > 0   ? { pathChests:    [...S.pathChests]    } : {}),
+    allCompleted:   [...S.allCompleted],
+    lessonStars:    S.lessonStars || {},
+    titles:         [...S.titles],
+    openedChests:   [...S.openedChests],
+    pathChests:     [...S.pathChests],
     weekDone:           S.weekDone,
     weekStartDate:      S.weekStartDate || getWeekStartDate(),
     enabledCats:        [...S.enabledCats],
@@ -4363,8 +4363,8 @@ function restoreFromFirebase() {
   if(!_db || !CU.uid) { pushMyProgress(); return; }
   _db.ref(`team/${CU.uid}`).once('value', snap => {
     const data = snap.val();
-    // xp > 0 조건 제거: ts 기준으로 기존 데이터 존재 여부 확인 (xp=0 데이터도 복원)
-    if(data && data.ts && (data.xp > 0 || data.streak > 0 || (data.allCompleted && data.allCompleted.length > 0))) {
+    // ts 기준으로 기존 데이터 존재 여부 확인 (xp=0인 사용자의 설정도 복원)
+    if(data && data.ts) {
       // Firebase에 유효한 데이터가 있으면 복원
       S.xp = data.xp || 0;
       // 스트릭 유효성 검사: lastStreakDate 기준으로 연속 일수 검증
