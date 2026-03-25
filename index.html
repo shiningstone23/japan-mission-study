@@ -4074,11 +4074,12 @@ function loginAs(uid, name) {
       }
     }
     applyProgressSnapshot(saved);
-    // 날짜 바뀌면 하트 자동 충전
+    // 날짜 바뀌면 하트 자동 충전 (변경 즉시 persistProgress로 저장)
     const todayStr = new Date().toDateString();
     if (S.lastHeartRefillDate !== todayStr) {
       S.hearts = S.maxHearts;
       S.lastHeartRefillDate = todayStr;
+      persistProgress();
     }
   } else {
     S.streak=0; S.lastStreakDate=''; S.xp=0; S.hearts=5; S.maxHearts=5;
