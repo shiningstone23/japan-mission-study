@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mission-jp-v4';
+const CACHE_NAME = 'mission-jp-v5';
 const CACHE_FILES = [
   '/',
   '/japan-mission-study/',
@@ -20,7 +20,12 @@ self.addEventListener('activate', evt => {
   evt.waitUntil(
     caches.keys().then(keys =>
       Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
-    )
+    ).then(() => {
+      // 새 버전 활성화 시 모든 열린 탭을 자동 새로고침
+      return self.clients.matchAll({ type: 'window' }).then(clients => {
+        clients.forEach(client => client.navigate(client.url));
+      });
+    })
   );
   self.clients.claim();
 });
