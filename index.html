@@ -2587,9 +2587,15 @@ function showResult(finished) {
     const stars = S.score===total ? 3 : S.score>=Math.ceil(total*.7) ? 2 : 1;
     S.lessonStars[S.lesson.id] = Math.max(S.lessonStars[S.lesson.id]||0, stars);
     S.completedToday.add(S.lesson.id);
-    const todayStr = new Date().toDateString();
+    const todayStr     = new Date().toDateString();
+    const yesterdayStr = new Date(Date.now() - 86400000).toDateString();
     if(S.todayXP >= S.dailyGoal && S.lastStreakDate !== todayStr) {
-      S.streak++;
+      // 어제 학습 → 연속 유지, 그 외(오래됐거나 처음) → 1로 리셋
+      if(S.lastStreakDate === yesterdayStr) {
+        S.streak++;
+      } else {
+        S.streak = 1;
+      }
       S.lastStreakDate = todayStr;
       S.weekDone[new Date().getDay()] = true;
     }
@@ -3547,8 +3553,9 @@ function closeProfile(e) {
 // ── Edit Name ─────────────────────────────────
 function startEditName() {
   const input = document.getElementById('profile-name-input');
-  // 기본 이름("선교대원 N호")이면 빈칸으로 시작 → 실수로 "호" 남는 것 방지
-  input.value = /^선교대원\s*\d+호$/.test(CU.name) ? '' : CU.name;
+  // 기본 이름("선교대원 N호") 형식이면 빈칸으로 시작 → 실수로 "호" 남는 것 방지
+  const isDefaultName = /^선교대원\s*\d+\s*호$/.test(CU.name.trim());
+  input.value = isDefaultName ? '' : CU.name;
   document.getElementById('profile-name-input-row').style.display = 'flex';
   document.getElementById('profile-edit-name-btn').style.display = 'none';
   input.focus();
@@ -3574,6 +3581,9 @@ function saveEditName() {
   // 현재 세션 업데이트
   CU.name = newName;
   persistProgress();
+
+  // 로컬 팀 캐시 즉시 업데이트 (Firebase 응답 기다리지 않고 랭킹에 바로 반영)
+  if(_teamData && _teamData[CU.uid]) _teamData[CU.uid].name = newName;
 
   // Firebase 업데이트
   pushMyProgress();
@@ -3662,13 +3672,16 @@ function initFirebase() {
 function pushMyProgress() {
   if(!_db || !CU.uid) return;
   const today = new Date().toDateString();
+  // lastStudied는 실제 학습한 날만 업데이트 (로그인만 해도 today로 덮어쓰지 않음)
+  const lastStudied = S.todayXP > 0 ? today : (S.lastStreakDate || '');
   _db.ref(`team/${CU.uid}`).set({
-    name:        CU.name,
-    xp:          S.xp,
-    todayXP:     S.todayXP,
-    streak:      S.streak,
-    lastStudied: today,
-    ts:          Date.now(),
+    name:           CU.name,
+    xp:             S.xp,
+    todayXP:        S.todayXP,
+    streak:         S.streak,
+    lastStudied:    lastStudied,
+    lastStreakDate: S.lastStreakDate || '',
+    ts:             Date.now(),
   });
 }
 
@@ -3681,15 +3694,17 @@ function restoreFromFirebase() {
     if(data && data.ts && (data.xp > 0 || data.streak > 0)) {
       // Firebase에 유효한 데이터가 있으면 복원
       S.xp = data.xp || 0;
-      // 스트릭 유효성 검사: 마지막 학습일이 어제/오늘이 아니면 리셋
+      // 스트릭 유효성 검사: lastStreakDate 기준으로 연속 일수 검증
       const today     = new Date().toDateString();
       const yesterday = new Date(Date.now() - 86400000).toDateString();
-      const lastStudied = data.lastStudied || '';
-      if(lastStudied && lastStudied !== today && lastStudied !== yesterday) {
+      const lastStreakDate = data.lastStreakDate || data.lastStudied || '';
+      if(lastStreakDate && lastStreakDate !== today && lastStreakDate !== yesterday) {
+        // 연속이 끊김 → 리셋
         S.streak = 0;
         S.lastStreakDate = '';
       } else {
         S.streak = data.streak || 0;
+        S.lastStreakDate = lastStreakDate;
       }
       S.todayXP = (lastStudied === today) ? (data.todayXP || 0) : 0;
       persistProgress();  // localStorage에도 저장
@@ -3919,7 +3934,7 @@ function renderRankList(members) {
 
     const actionBtn = m.isMe ? '' : m.doneToday
       ? `<div class="done-check">✅</div>`
-      : `<button class="nudge-btn" onclick="openNudge('${m.uid}','${m.name.replace(/'/g,'')}')" title="찌르기">🫸</button>`;
+      : `<button class="nudge-btn" onclick="openNudge('${m.uid}','${m.name.replace(/'/g,'')}')" title="찌르기">👆</button>`;
 
     row.innerHTML = `
       <div class="rank-num ${numClass}">${rank}</div>
