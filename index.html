@@ -2229,6 +2229,7 @@ function refillHeartsWithGems() {
   S.hearts = S.maxHearts;
   updateTopbar();
   persistProgress();
+  pushMyProgress();
   closeHeartModal();
   showToast('❤️ 하트 충전!', `하트가 ${S.maxHearts}개로 충전됐어요!`, 'success');
 }
@@ -2354,6 +2355,7 @@ function openChest(chestId) {
   S.titles.add(unit.chestTitle);
   S.gems += gemReward;
   persistProgress();
+  pushMyProgress();
   updateGemDisplay();
 
   // Show title award modal (with gem reward info)
@@ -2386,6 +2388,7 @@ function showCouponModal() {
   if(!modal) return;
   S.couponRevealed = true;
   persistProgress();
+  pushMyProgress();
   modal.style.display = 'flex';
 }
 
@@ -3245,6 +3248,7 @@ function resetMyData() {
   S.completedToday=new Set(); S.lessonStars={}; S.titles=new Set();
   S.openedChests=new Set(); S.pathChests=new Set(); S.gems=0; S.streakShield=false; S.couponRevealed=false;
   persistProgress();
+  pushMyProgress();
   renderHome();
   goTo('home');
   showToast('🗑️ 데이터 초기화 완료', '처음부터 다시 시작해요!', 'success');
@@ -3269,6 +3273,7 @@ function setGoal(val) {
   document.getElementById('goal-sub-label').textContent = `${val} XP`;
   showToast('🎯 하루 목표가 변경됐어요!', `${val} XP로 설정됐습니다`,'success');
   persistProgress();
+  pushMyProgress();
 }
 
 function setQCount(val) {
@@ -3278,6 +3283,7 @@ function setQCount(val) {
   });
   showToast('📝 문제 수가 변경됐어요!', `레슨당 ${val}문제로 설정됐습니다`,'success');
   persistProgress();
+  pushMyProgress();
 }
 
 function toggleDark() {
@@ -3286,6 +3292,7 @@ function toggleDark() {
   const dt = document.getElementById('dark-toggle');
   if(S.darkMode) dt.classList.add('on'); else dt.classList.remove('on');
   persistProgress();
+  pushMyProgress();
 }
 
 function toggleSound() {
@@ -3295,6 +3302,7 @@ function toggleSound() {
   if(S.sound) showToast('🔊 효과음 켜짐','','success');
   else showToast('🔇 효과음 꺼짐','','');
   persistProgress();
+  pushMyProgress();
 }
 
 /* ═══════════════════════════════════════════
@@ -3335,6 +3343,7 @@ async function toggleNotif() {
   updateNotifToggleUI();
   updateNotifRowsVis();
   persistProgress();
+  pushMyProgress();
 }
 
 function updateNotifToggleUI() {
@@ -4482,6 +4491,7 @@ async function sendNudge(targetUid, targetName, message) {
   S.gems += 2;
   updateTopbar();
   persistProgress();
+  pushMyProgress();
   closeNudge();
   showToast(`✈️ ${targetName}에게 전송! 💎+2`, '찌르기 보상으로 보석 2개를 받았어요!', 'success');
   showMascot('excited', '찌르기 완료! 🐾', `${targetName}에게 메시지를 보냈어요!\n보석 2개를 드려요! 💎`, 'bounce', 3500);
