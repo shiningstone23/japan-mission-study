@@ -4564,13 +4564,15 @@ async function sendNudge(targetUid, targetName, message) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           subscription: sub,
-          title: `🐾 ${CU.name}이(가) 찌릅니다!`,
+          title: `🐾 ${CU.name}${josa(CU.name,'이가')} 찌릅니다!`,
           body: message,
           icon: '/japan-mission-study/megumi-icon.jpg',
         }),
-      }).catch(() => {});  // 실패해도 무시
+      }).catch(err => console.warn('푸시 전송 실패:', err));
+    } else {
+      console.warn(`push_subs/${targetUid} 없음 — 상대방이 알림을 허용하지 않았거나 앱 미접속`);
     }
-  } catch(e) {}
+  } catch(e) { console.warn('sendNudge push 오류:', e); }
   // 찌르기 발신자에게 보석 2개 보상
   S.gems += 2;
   updateTopbar();
