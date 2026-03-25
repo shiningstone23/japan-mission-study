@@ -1860,12 +1860,6 @@ body{
       </div>
     </div>
 
-    <!-- Registered Users -->
-    <div class="settings-section">
-      <div class="ss-header">👥 등록된 사용자</div>
-      <div id="users-list"></div>
-    </div>
-
     <!-- Reset My Data -->
     <div class="settings-section">
       <div class="ss-header">⚠️ 데이터 관리</div>
@@ -3235,37 +3229,6 @@ function renderSettings() {
 
   document.getElementById('notif-time').value = S.notifTime;
 
-  // Users list
-  const ul = document.getElementById('users-list');
-  if(ul) {
-    const users = getAllUsers();
-    const uids = Object.keys(users);
-    if(uids.length === 0) {
-      ul.innerHTML = `<div style="padding:14px 16px;font-size:13px;color:var(--text2);">아직 등록된 사용자가 없어요</div>`;
-    } else {
-      ul.innerHTML = uids.map(uid => {
-        const u = users[uid];
-        const color = getAvatarColor(u.name);
-        const initials = getInitials(u.name);
-        const isMe = CU.uid === uid;
-        const prog = loadUserProgress(uid);
-        const xp = prog ? prog.xp || 0 : 0;
-        // streak 날짜 검증: 마지막 스트릭 날짜가 오늘/어제가 아니면 0
-        const _today = new Date().toDateString();
-        const _yesterday = new Date(Date.now() - 86400000).toDateString();
-        const _lsd = prog ? (prog.lastStreakDate || '') : '';
-        const streak = (_lsd === _today || _lsd === _yesterday) ? (prog ? prog.streak || 0 : 0) : 0;
-        return `<div class="user-row">
-          <div class="ur-avatar" style="background:${color};">${initials}</div>
-          <div class="ur-info">
-            <div class="ur-name">${u.name} <span style="font-size:11px;color:var(--text2);">@${uid}</span></div>
-            <div class="ur-sub">🔥 ${streak}일 연속 · ⚡ ${xp} XP</div>
-          </div>
-          ${isMe ? '<span class="ur-you">나</span>' : ''}
-        </div>`;
-      }).join('');
-    }
-  }
 }
 
 function resetMyData() {
