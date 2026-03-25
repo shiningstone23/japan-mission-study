@@ -3547,11 +3547,11 @@ function closeProfile(e) {
 // ── Edit Name ─────────────────────────────────
 function startEditName() {
   const input = document.getElementById('profile-name-input');
-  input.value = CU.name;
+  // 기본 이름("선교대원 N호")이면 빈칸으로 시작 → 실수로 "호" 남는 것 방지
+  input.value = /^선교대원\s*\d+호$/.test(CU.name) ? '' : CU.name;
   document.getElementById('profile-name-input-row').style.display = 'flex';
   document.getElementById('profile-edit-name-btn').style.display = 'none';
   input.focus();
-  input.select();
 }
 
 function cancelEditName() {
@@ -3893,9 +3893,8 @@ function renderTop3(members) {
   members.slice(0,3).forEach((m,i) => {
     const card = document.createElement('div');
     card.className = `top3-card ${medals[i]}`;
-    // 기본 이름 "선교대원 N호" → "대원N"으로 축약, 변경된 닉네임은 그대로
-    const m0 = m.name.match(/^선교대원\s*(\d+)호$/);
-    const shortName = m0 ? `대원${m0[1]}` : m.name;
+    // 이름 그대로 표시 (기본 이름 포함), 변경된 닉네임도 그대로
+    const shortName = m.name;
     card.innerHTML = `
       <div class="top3-medal">${emojis[i]}</div>
       <div class="top3-name">${m.isMe ? '나 ('+shortName+')' : shortName}</div>
