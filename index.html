@@ -2719,9 +2719,17 @@ function renderQuestion() {
   else renderMCQ(q);
 }
 
+// 일본어(히라가나·카타카나·한자) 포함 여부 판별
+function isJapaneseText(text) {
+  return /[\u3040-\u30FF\u4E00-\u9FFF]/.test(text);
+}
+
 function selectAnswer(btn, chosen, correct) {
   if(S.answered) return;
   S.answered = true;
+
+  // 선택한 답이 일본어면 즉시 TTS 재생
+  if(isJapaneseText(chosen)) speakJapanese(chosen);
 
   const isCorrect = chosen === correct;
   const feedback = document.getElementById('feedback');
@@ -2756,7 +2764,8 @@ function selectAnswer(btn, chosen, correct) {
     document.getElementById('quiz-hearts-display').style.animation = 'heartPop .3s ease';
     btn.style.animation = 'shake .3s ease';
     setTimeout(()=>{btn.style.animation='';},300);
-    setTimeout(()=>speakJapanese(correct), 700);
+    // 정답 TTS: 선택한 답 TTS가 끝난 뒤 재생 (겹침 방지)
+    if(isJapaneseText(correct)) setTimeout(()=>speakJapanese(correct), 1200);
   }
 
   feedback.style.display = 'block';
