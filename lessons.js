@@ -396,9 +396,9 @@ const LESSONS = [
         correct: 0
       },
       {
-        q: '"7"을 일본어로 쓴 것은?',
-        jp: 'なな / しち',
-        reading: '나나 / 시치',
+        q: '"7"을 일본어로 쓴 것은? (なな / しち 두 가지 읽기)',
+        jp: 'なな',
+        reading: '나나',
         choices: ['ろく', 'なな', 'はち', 'きゅう'],
         correct: 1
       },
@@ -424,9 +424,9 @@ const LESSONS = [
         correct: 0
       },
       {
-        q: '"9"를 일본어로 바르게 쓴 것은?',
-        jp: 'きゅう / く',
-        reading: '큐우 / 쿠',
+        q: '"9"를 일본어로 바르게 쓴 것은? (きゅう / く 두 가지 읽기)',
+        jp: 'きゅう',
+        reading: '큐우',
         choices: ['はち', 'きゅう', 'じゅう', 'なな'],
         correct: 1
       }
@@ -4573,3 +4573,8 @@ const LESSONS = [
   ]
 }
 ];
+
+// Node.js 환경(테스트)에서만 export - 브라우저에는 영향 없음
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = LESSONS;
+}
