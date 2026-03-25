@@ -161,6 +161,10 @@ body{
 .journey-chest.locked{opacity:.5;}
 @keyframes chestPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,217,0,.4)}50%{box-shadow:0 0 0 8px rgba(255,217,0,0)}}
 .chest-icon{display:flex;align-items:center;justify-content:center;}
+.badge-grid{display:flex;flex-wrap:wrap;gap:8px;padding-top:4px;}
+.badge-chip{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:700;color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.15);}
+.badge-chip .badge-icon{font-size:16px;}
+.badge-empty{color:var(--text2);font-size:13px;text-align:center;padding:14px 0 4px;line-height:1.6;}
 .chest-label{font-size:12px;font-weight:700;color:var(--text);text-align:center;}
 
 /* Title Award Modal */
@@ -2745,6 +2749,18 @@ function renderStats() {
         <div class="sg-item"><div class="sg-val" style="color:#1CB0F6">📚 ${LESSONS.filter(l=>!l.comingSoon).length}</div><div class="sg-lbl">전체 레슨</div></div>
         <div class="sg-item"><div class="sg-val" style="color:#CE82FF">✅ ${S.allCompleted.size}</div><div class="sg-lbl">완료 레슨</div></div>
       </div>
+    </div>
+    <div class="stats-card">
+      <div class="stats-title">획득한 뱃지 🏅</div>
+      ${(() => {
+        const earned = UNITS.filter(u => S.openedChests.has(u.chestId));
+        if (earned.length === 0) return `<div class="badge-empty">아직 획득한 뱃지가 없어요 🔒<br>유닛을 완료하고 보물 상자를 열어보세요!</div>`;
+        return `<div class="badge-grid">${earned.map(u =>
+          `<div class="badge-chip" style="background:${u.color}">
+            <span class="badge-icon">${u.icon}</span>${u.chestTitle}
+          </div>`
+        ).join('')}</div>`;
+      })()}
     </div>
     <div class="stats-card">
       <div class="stats-title">카테고리별 진행도</div>
