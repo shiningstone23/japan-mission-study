@@ -4442,9 +4442,13 @@ async function sendNudge(targetUid, targetName, message) {
       }).catch(() => {});  // 실패해도 무시
     }
   } catch(e) {}
+  // 찌르기 발신자에게 보석 2개 보상
+  S.gems += 2;
+  updateTopbar();
+  persistProgress();
   closeNudge();
-  showToast(`✈️ ${targetName}에게 전송!`, message, 'success');
-  showMascot('excited', '찌르기 완료! 🐾', `${targetName}에게 메시지를 보냈어요!`, 'bounce', 3500);
+  showToast(`✈️ ${targetName}에게 전송! 💎+2`, '찌르기 보상으로 보석 2개를 받았어요!', 'success');
+  showMascot('excited', '찌르기 완료! 🐾', `${targetName}에게 메시지를 보냈어요!\n보석 2개를 드려요! 💎`, 'bounce', 3500);
 }
 
 /* 뱃지 업데이트 (미완료 팀원 수) */
