@@ -172,7 +172,7 @@ body{
 .path-gem-chest:active{transform:scale(.95);}
 .path-gem-chest.ready{border:2px solid #1CB0F6;background:#E8F7FF;animation:gemChestPulse 2s ease infinite;}
 .path-gem-chest.opened{border:2px solid #BDBDBD;background:var(--bg2);cursor:default;opacity:.6;}
-.path-gem-chest.locked{opacity:.4;cursor:default;}
+.path-gem-chest.locked{opacity:.4;cursor:pointer;}
 .path-gem-icon{font-size:28px;line-height:1;}
 .path-gem-label{font-size:11px;font-weight:700;color:var(--text2);}
 @keyframes gemChestPulse{0%,100%{box-shadow:0 0 0 0 rgba(28,176,246,.4)}50%{box-shadow:0 0 0 8px rgba(28,176,246,0)}}
@@ -2304,13 +2304,19 @@ function renderJourney() {
         const pgOpened = S.pathChests.has(pgId);
         // 해당 레슨까지 모두 완료해야 열림
         const pgUnlocked = unitLessons.slice(0, li + 1).every(id => S.allCompleted.has(id));
+        const pgState = pgOpened ? 'opened' : pgUnlocked ? 'ready' : 'locked';
+        // 잠긴 상자 클릭 시 안내 토스트, 열린 상자 클릭 시 수집
+        const pgClick = pgOpened
+          ? ''
+          : pgUnlocked
+            ? `collectPathChest('${pgId}')`
+            : `showToast('🔒 잠겨있어요!', '앞의 레슨을 모두 완료하면 열려요!', 'warning')`;
         const pgEl = document.createElement('div');
         pgEl.className = 'path-gem-row';
         pgEl.innerHTML = `
-          <div class="path-gem-chest ${pgOpened ? 'opened' : pgUnlocked ? 'ready' : 'locked'}"
-               onclick="${pgUnlocked && !pgOpened ? `collectPathChest('${pgId}')` : ''}">
-            <div class="path-gem-icon">${pgOpened ? '✅' : '💎'}</div>
-            <div class="path-gem-label">${pgOpened ? '획득 완료' : pgUnlocked ? '보석 상자!' : '🔒 잠김'}</div>
+          <div class="path-gem-chest ${pgState}" onclick="${pgClick}">
+            <div class="path-gem-icon">${chestSVG(pgState)}</div>
+            <div class="path-gem-label">${pgOpened ? '획득 완료' : pgUnlocked ? '열기!' : '🔒 잠김'}</div>
           </div>
         `;
         wrap.appendChild(pgEl);
