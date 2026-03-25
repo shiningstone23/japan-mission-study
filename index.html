@@ -3472,7 +3472,13 @@ function loginAs(uid, name) {
   if(initFirebase()) {
     subscribeTeam();
     subscribeNudges();
-    pushMyProgress();
+    if(saved) {
+      // 로컬 데이터 있음 → 바로 Firebase에 업로드
+      pushMyProgress();
+    } else {
+      // 로컬 데이터 없음 → Firebase에서 먼저 복원 후 업로드
+      restoreFromFirebase();
+    }
   }
 
   setTimeout(()=>{
@@ -3654,6 +3660,25 @@ function pushMyProgress() {
     streak:      S.streak,
     lastStudied: today,
     ts:          Date.now(),
+  });
+}
+
+/* 로컬 데이터 없을 때 Firebase에서 내 진행상황 복원 */
+function restoreFromFirebase() {
+  if(!_db || !CU.uid) { pushMyProgress(); return; }
+  _db.ref(`team/${CU.uid}`).once('value', snap => {
+    const data = snap.val();
+    if(data && (data.xp || 0) > 0) {
+      // Firebase에 기존 데이터가 있으면 복원
+      S.xp = data.xp || 0;
+      S.streak = data.streak || 0;
+      const today = new Date().toDateString();
+      S.todayXP = (data.lastStudied === today) ? (data.todayXP || 0) : 0;
+      persistProgress();  // localStorage에도 저장
+      renderHome();       // 화면 업데이트
+    }
+    // 복원 후 (또는 Firebase에도 데이터 없을 시) push
+    pushMyProgress();
   });
 }
 
