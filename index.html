@@ -4087,7 +4087,7 @@ function loginAs(uid, name) {
     S.weekDone=[false,false,false,false,false,false,false];
     S.weekStartDate=getWeekStartDate();
     S.allCompleted=new Set(); S.completedToday=new Set();
-    S.lessonStars={}; S.titles=new Set(); S.openedChests=new Set();
+    S.lessonStars={}; S.titles=new Set(); S.openedChests=new Set(); S.pathChests=new Set();
     S.gems=0; S.streakShield=false; S.couponRevealed=false;
     S.notifEnabled=true; S.notifTime='09:00';
     S.darkMode=false; S.sound=true; S.qCount=5;
@@ -4149,7 +4149,7 @@ function doLogout() {
   S.todayXP=0; S.dailyGoal=20;
   S.weekDone=[false,false,false,false,false,false,false]; S.weekStartDate='';
   S.allCompleted=new Set(); S.completedToday=new Set();
-  S.lessonStars={}; S.titles=new Set(); S.openedChests=new Set();
+  S.lessonStars={}; S.titles=new Set(); S.openedChests=new Set(); S.pathChests=new Set();
   S.gems=0; S.streakShield=false; S.couponRevealed=false;
   S.enabledCats=new Set();
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
@@ -4333,6 +4333,7 @@ function pushMyProgress() {
     ...(Object.keys(S.lessonStars||{}).length > 0 ? { lessonStars: S.lessonStars } : {}),
     ...(S.titles.size > 0        ? { titles:        [...S.titles]        } : {}),
     ...(S.openedChests.size > 0  ? { openedChests:  [...S.openedChests]  } : {}),
+    ...(S.pathChests.size > 0   ? { pathChests:    [...S.pathChests]    } : {}),
     weekDone:       S.weekDone,
     weekStartDate:  S.weekStartDate || getWeekStartDate(),
     enabledCats:    [...S.enabledCats],
@@ -4380,6 +4381,7 @@ function restoreFromFirebase() {
       if(data.lessonStars   && Object.keys(data.lessonStars).length > 0) S.lessonStars = data.lessonStars;
       if(data.titles        && data.titles.length        > 0) S.titles        = new Set(data.titles);
       if(data.openedChests  && data.openedChests.length  > 0) S.openedChests  = new Set(data.openedChests);
+      if(data.pathChests    && data.pathChests.length    > 0) S.pathChests    = new Set(data.pathChests);
       const _fbWeekStart = data.weekStartDate || '';
       const _curWeekStart = getWeekStartDate();
       S.weekDone = (_fbWeekStart === _curWeekStart && data.weekDone)
