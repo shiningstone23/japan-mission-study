@@ -3771,6 +3771,12 @@ function updateGemDisplay() {
   const el = document.getElementById('stat-gems');
   if(el) el.textContent = S.gems;
 }
+function updateTopbar() {
+  document.getElementById('stat-streak').textContent = S.streak + '일';
+  document.getElementById('stat-hearts').textContent = S.hearts;
+  document.getElementById('stat-xp').textContent = S.xp;
+  updateGemDisplay();
+}
 
 function openShop() {
   const modal = document.getElementById('shop-modal');
