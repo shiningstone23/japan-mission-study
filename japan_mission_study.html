@@ -3721,6 +3721,20 @@ function updateHomeMascot() {
   msg.textContent = text;
 }
 
+/* 한국어 조사 헬퍼 */
+function josa(word, type) {
+  const last = word[word.length - 1];
+  const code = last.charCodeAt(0);
+  const isKorean = code >= 0xAC00 && code <= 0xD7A3;
+  const hasFinal = isKorean && (code - 0xAC00) % 28 !== 0; // 받침 있음 (ㄹ 포함)
+  const hasRieul  = isKorean && (code - 0xAC00) % 28 === 8; // 받침 ㄹ
+  if (type === '이가')  return hasFinal ? '이' : '가';
+  if (type === '은는')  return hasFinal ? '은' : '는';
+  if (type === '을를')  return hasFinal ? '을' : '를';
+  if (type === '으로로') return (hasFinal && !hasRieul) ? '으로' : '로';
+  return '';
+}
+
 function showToast(title, body, type='') {
   const icons = {success:'✅', warning:'⚠️', push:'🔔', '':`💬`};
   const icon = icons[type] || icons[''];
@@ -4244,7 +4258,7 @@ function saveEditName() {
   cancelEditName();
   updateTopbarUser();
 
-  showToast('✅ 이름이 변경됐어요!', `"${newName}"으로 저장됐어요 🐾`, 'success');
+  showToast('✅ 이름이 변경됐어요!', `"${newName}"${josa(newName,'으로로')} 저장됐어요 🐾`, 'success');
 }
 
 // ── Change Password ────────────────────────────
@@ -4458,7 +4472,7 @@ function subscribeNudges() {
     const age = Date.now() - (n.ts || 0);
     if(age > 86400000) { snap.ref.remove(); return; }  // 24시간 지난 건 무시
     snap.ref.remove();  // 읽으면 삭제
-    showToast(`🐾 ${n.fromName}이(가) 찌릅니다!`, n.message, 'push');
+    showToast(`🐾 ${n.fromName}${josa(n.fromName,'이가')} 찌릅니다!`, n.message, 'push');
     showMascot('cheer', `${n.fromName}의 메시지 🐾`, n.message, 'wiggle', 5000);
   });
 }

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mission-jp-v7';
+const CACHE_NAME = 'mission-jp-v8';
 const CACHE_FILES = [
   '/',
   '/japan-mission-study/',
@@ -120,8 +120,8 @@ function getMsg() {
       body:`저도 눈꺼풀이 무거워요... 그래도 같이 해요! 5분이면 돼요 💪` },
 
     /* 🔥 스트릭/동기부여 시리즈 */
-    { title:`🔥 ${st}일 연속! 오늘도 이어가요!`,
-      body:`메구미가 ${st}일 내내 응원했어요 🐾 오늘도 같이 달려봐요!` },
+    ...(st > 0 ? [{ title:`🔥 ${st}일 연속! 오늘도 이어가요!`,
+      body:`메구미가 ${st}일 내내 응원했어요 🐾 오늘도 같이 달려봐요!` }] : []),
     { title:'⚡ 지금 안 하면 내일 두 배로 힘들어요',
       body:`메구미의 경험담이에요... 오늘 한 레슨이 내일을 가볍게 해줘요 🙏` },
     { title:'🏃 선교팀 중에 가장 열심히 해봐요!',
