@@ -1854,7 +1854,7 @@ body{
       <div class="setting-row">
         <div class="sr-left">
           <div class="sr-label">하트 충전</div>
-          <div class="sr-sub">30분마다 1개 자동 충전</div>
+          <div class="sr-sub">매일 자동 충전 (하루 한 번)</div>
         </div>
         <div style="font-size:13px;font-weight:700;color:var(--green);" id="hearts-timer">충전 완료 ✓</div>
       </div>
@@ -3202,7 +3202,7 @@ function renderSettings() {
 
   // Hearts timer
   document.getElementById('hearts-timer').textContent =
-    S.hearts >= S.maxHearts ? '충전 완료 ✓' : `${30 - (new Date().getMinutes()%30)}분 후 충전`;
+    S.hearts >= S.maxHearts ? '충전 완료 ✓' : '내일 자동 충전';
 
   // Category chips
   const catDiv = document.getElementById('cat-chips');
@@ -4785,20 +4785,7 @@ function closeNudge(e) {
 }
 
 
-/* ═══════════════════════════════════════════
-   HEARTS REGEN
-═══════════════════════════════════════════ */
-function startHeartsRegen() {
-  setInterval(()=>{
-    if(S.hearts < S.maxHearts) {
-      S.hearts = Math.min(S.maxHearts, S.hearts+1);
-      renderHome();
-      persistProgress();
-      pushMyProgress();
-      if(document.getElementById('screen-settings').classList.contains('active')) renderSettings();
-    }
-  }, 30*60*1000);
-}
+/* 하트 충전: 매일 loginAs()에서 전체 충전 — 별도 regen 없음 */
 
 /* ═══════════════════════════════════════════
    INIT
@@ -4813,12 +4800,10 @@ function init() {
     const users = getAllUsers();
     if(users[sessionUid]) {
       loginAs(sessionUid, users[sessionUid].name);
-      startHeartsRegen();
       return;
     }
   }
   // Show auth screen
-  startHeartsRegen();
 }
 
 init();
