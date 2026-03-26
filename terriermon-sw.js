@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mission-jp-v10';
+const CACHE_NAME = 'mission-jp-v11';
 const CACHE_FILES = [
   '/',
   '/japan-mission-study/',
@@ -32,6 +32,20 @@ self.addEventListener('activate', evt => {
 
 self.addEventListener('fetch', evt => {
   if(evt.request.method !== 'GET') return;
+
+  // HTML 네비게이션 요청: 네트워크 우선 → 실패 시 캐시 (항상 최신 버전 로드)
+  if(evt.request.mode === 'navigate') {
+    evt.respondWith(
+      fetch(evt.request).then(res => {
+        // 성공하면 캐시도 갱신
+        caches.open(CACHE_NAME).then(c => c.put(evt.request, res.clone()));
+        return res;
+      }).catch(() => caches.match(evt.request))
+    );
+    return;
+  }
+
+  // 이미지·manifest 등 정적 리소스: 캐시 우선 (오프라인 지원)
   evt.respondWith(
     caches.match(evt.request).then(cached => cached || fetch(evt.request))
   );

@@ -1938,6 +1938,18 @@ body{
       </div>
     </div>
 
+    <!-- App Update -->
+    <div class="settings-section">
+      <div class="ss-header">🔄 앱 업데이트</div>
+      <div class="setting-row" style="align-items:center;justify-content:space-between;">
+        <div class="sr-left">
+          <div class="sr-label">최신 버전으로 업데이트</div>
+          <div class="sr-sub">홈 화면 추가 앱에 최신 내용이 반영되지 않을 때</div>
+        </div>
+        <button onclick="forceAppUpdate()" id="update-btn" style="flex-shrink:0;padding:8px 14px;border-radius:10px;border:none;background:var(--blue);color:#fff;font-size:13px;font-weight:800;cursor:pointer;white-space:nowrap;">🔄 업데이트</button>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -3608,6 +3620,27 @@ function renderSettings() {
 
   document.getElementById('notif-time').value = S.notifTime;
 
+}
+
+async function forceAppUpdate() {
+  const btn = document.getElementById('update-btn');
+  if(btn) { btn.textContent = '업데이트 중...'; btn.disabled = true; }
+  try {
+    // 1. 서비스 워커 강제 업데이트
+    if('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.update()));
+    }
+    // 2. 캐시 전체 삭제
+    if('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+    // 3. 새로고침
+    window.location.reload(true);
+  } catch(e) {
+    window.location.reload(true);
+  }
 }
 
 function resetMyData() {
