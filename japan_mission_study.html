@@ -717,6 +717,11 @@ body{
   background:rgba(255,255,255,.2);border-radius:8px;padding:1px 5px;
 }
 .flight-plane.me .fp-rank{background:#FFD900;color:#333;}
+.flight-plane .fp-name{
+  position:absolute;top:auto;bottom:-33px;left:50%;transform:translateX(-50%);
+  font-size:8px;font-weight:600;white-space:nowrap;color:rgba(255,255,255,.85);
+  text-shadow:0 1px 2px rgba(0,0,0,.5);
+}
 
 /* 상위 3명 카드 */
 .top3-section{padding:14px 16px 0;}
@@ -4937,18 +4942,23 @@ function renderFlightTrack(members) {
   groups.forEach(g => {
     const isMe = g.items.some(p => p.m.isMe);
     let label;
+    let nameLabel;
     if(g.items.length === 1) {
       label = g.items[0].m.isMe ? '나' : g.items[0].rank + '위';
+      nameLabel = g.items[0].m.name || '';
     } else {
       const nonMeRanks = g.items.filter(p => !p.m.isMe).map(p => p.rank + '위');
       if(isMe && nonMeRanks.length > 0) label = nonMeRanks[0] + ' 또는 나';
       else if(isMe) label = '나';
       else label = nonMeRanks[0];
+      // 그룹이면 첫 번째 이름 + 인원수
+      const names = g.items.map(p => p.m.name || '').filter(Boolean);
+      nameLabel = names.length > 1 ? `${names[0]} 외 ${names.length - 1}` : (names[0] || '');
     }
     const div = document.createElement('div');
     div.className = `flight-plane${isMe?' me':''}`;
     div.style.left = `${g.pct}%`;
-    div.innerHTML = `<span class="fp-rank">${label}</span>✈️`;
+    div.innerHTML = `<span class="fp-rank">${label}</span>✈️${nameLabel ? `<span class="fp-name">${nameLabel}</span>` : ''}`;
     container.appendChild(div);
   });
 }
