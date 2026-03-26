@@ -2130,6 +2130,7 @@ const S = {
   streakShield: false,
   couponRevealed: false,
   notifTimeout:null,
+  heartsSentToday: { date: '', sentTo: [] }, // 하트 선물 하루 5회 / 동일인 중복 방지
 };
 
 /* ═══════════════════════════════════════════
@@ -2455,19 +2456,32 @@ function goGetHeartGift() {
 }
 
 /* ─── HEART GIFT (Firebase) ─── */
+function getTodayHeartsSent() {
+  const today = new Date().toDateString();
+  if (S.heartsSentToday.date !== today) {
+    S.heartsSentToday = { date: today, sentTo: [] };
+  }
+  return S.heartsSentToday.sentTo;
+}
+
 function giftHeart(targetUid, targetName) {
-  if (S.hearts <= 1) {
-    showToast('❤️ 하트 부족', '하트가 1개 남았을 때는 선물할 수 없어요!', 'warning');
+  if (!_db) { showToast('❌ 오프라인', '선물은 온라인 상태에서만 가능해요', 'warning'); return; }
+  const sentTo = getTodayHeartsSent();
+  if (sentTo.length >= 5) {
+    showToast('❤️ 오늘 선물 완료', '하루에 최대 5명에게 선물할 수 있어요. 내일 다시 시도해요!', 'warning');
     return;
   }
-  if (!_db) { showToast('❌ 오프라인', '선물은 온라인 상태에서만 가능해요', 'warning'); return; }
-  S.hearts -= 1;
-  updateTopbar();
+  if (sentTo.includes(targetUid)) {
+    showToast('❤️ 이미 선물했어요', `${targetName}님께는 오늘 이미 하트를 보냈어요!`, 'warning');
+    return;
+  }
+  S.heartsSentToday.sentTo.push(targetUid);
   persistProgress();
   pushMyProgress();
   _db.ref(`gifts/${targetUid}`).push({ from: CU.uid, fromName: CU.name, hearts: 1, ts: Date.now() });
   renderTeam();
-  showToast('❤️ 하트 선물!', `${targetName}님께 하트 1개를 선물했어요!`, 'success');
+  const remaining = 5 - S.heartsSentToday.sentTo.length;
+  showToast('❤️ 하트 선물!', `${targetName}님께 하트 1개를 선물했어요! (오늘 남은 선물 ${remaining}번)`, 'success');
 }
 function subscribeHeartGifts() {
   if (!_db || !CU.uid) return;
@@ -4607,6 +4621,7 @@ function pushMyProgress() {
     darkMode:           S.darkMode,
     qCount:             S.qCount,
     dailyGoal:          S.dailyGoal,
+    heartsSentToday:    S.heartsSentToday,
     pw:                 (getAllUsers()[CU.uid] || {}).pw || '',
   });
 }
@@ -4671,6 +4686,10 @@ function restoreFromFirebase() {
       }
       if(data.qCount          !== undefined) S.qCount          = data.qCount;
       if(data.dailyGoal       !== undefined) S.dailyGoal       = data.dailyGoal;
+      // heartsSentToday: 오늘 날짜와 일치할 때만 복원 (날짜 지난 건 무시)
+      if(data.heartsSentToday && data.heartsSentToday.date === new Date().toDateString()) {
+        S.heartsSentToday = data.heartsSentToday;
+      }
       if(data.pw) {
         const users = getAllUsers();
         if(users[CU.uid]) { users[CU.uid].pw = data.pw; saveAllUsers(users); }
@@ -4929,6 +4948,16 @@ function renderRankList(members) {
   list.innerHTML = '';
   const colors = ['#58CC02','#1CB0F6','#CE82FF','#FF9600','#FF6B9D','#00CDC1','#FFD900','#FF4B4B','#46A302','#0085C7'];
 
+  // 하트 선물 현황 배너
+  const sentToday = getTodayHeartsSent();
+  const remaining = 5 - sentToday.length;
+  const banner = document.createElement('div');
+  banner.style.cssText = 'padding:10px 16px 4px;font-size:13px;color:var(--text2);text-align:center;';
+  banner.innerHTML = remaining > 0
+    ? `❤️ 오늘 팀원에게 하트를 <b style="color:#FF4B4B">${remaining}번</b> 더 선물할 수 있어요`
+    : `❤️ 오늘 선물을 모두 완료했어요! 내일 또 선물할 수 있어요 🎉`;
+  list.appendChild(banner);
+
   members.forEach((m, i) => {
     const rank = i + 1;
     const numClass = rank===1?'top1':rank===2?'top2':rank===3?'top3':'';
@@ -4937,8 +4966,10 @@ function renderRankList(members) {
     const row      = document.createElement('div');
     row.className  = `rank-item${m.doneToday?' done':''}${m.isMe?' me':''}`;
 
-    const canGift = !m.isMe && S.hearts > 1;
-    const giftBtn = m.isMe ? '' : `<button class="gift-heart-btn" onclick="giftHeart('${m.uid}','${m.name.replace(/'/g,'')}')" ${canGift?'':'disabled'} title="하트 선물">❤️+1</button>`;
+    const sentToday = getTodayHeartsSent();
+    const canGift = !m.isMe && sentToday.length < 5 && !sentToday.includes(m.uid);
+    const alreadySent = !m.isMe && sentToday.includes(m.uid);
+    const giftBtn = m.isMe ? '' : `<button class="gift-heart-btn" onclick="giftHeart('${m.uid}','${m.name.replace(/'/g,'')}')" ${canGift?'':'disabled'} title="${alreadySent?'오늘 이미 선물했어요':sentToday.length>=5?'오늘 선물 5회 완료':'하트 선물'}">${alreadySent?'❤️✓':'❤️+1'}</button>`;
     const nudgeBtn = m.isMe ? '' : m.doneToday
       ? `<div class="done-check">✅</div>`
       : `<button class="nudge-btn" onclick="openNudge('${m.uid}','${m.name.replace(/'/g,'')}')" title="찌르기">👆</button>`;
