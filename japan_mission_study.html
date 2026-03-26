@@ -340,6 +340,26 @@ body{
 
 /* ── HOME ────────────────────────────────────── */
 .home-body{padding:16px;display:flex;flex-direction:column;gap:16px;}
+/* ── 홈 상단 이동 플로팅 버튼 ───────────────── */
+#scroll-top-btn{
+  position:fixed;
+  bottom:calc(52px + env(safe-area-inset-bottom) + 12px);
+  right:16px;
+  width:44px;height:44px;
+  border-radius:50%;
+  border:none;
+  background:var(--bg);
+  box-shadow:0 2px 12px rgba(0,0,0,.18);
+  font-size:20px;
+  cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;
+  transition:opacity .25s, transform .25s;
+  z-index:40;
+  -webkit-tap-highlight-color:transparent;
+}
+#scroll-top-btn.visible{opacity:1;pointer-events:auto;}
+#scroll-top-btn:active{transform:scale(.88);}
 .daily-card{
   background:linear-gradient(135deg,#58CC02,#46A302);
   border-radius:var(--r);padding:16px 20px;color:#fff;
@@ -1580,6 +1600,7 @@ body{
 </div>
 
 <!-- ══════════════════ HOME SCREEN ══════════════════ -->
+<button id="scroll-top-btn" onclick="document.getElementById('screen-home').scrollTo({top:0,behavior:'smooth'})">↑</button>
 <div class="screen" id="screen-home">
   <div class="topbar">
     <div class="topbar-logo">메구미링고</div>
@@ -3105,13 +3126,20 @@ function renderNextLessonCard() {
 
 /* ── journey map에서 현재 레슨 위치로 자동 스크롤 ── */
 function scrollToCurrentLesson() {
-  // pulse-ring 클래스(현재 레슨)가 있는 노드를 찾아 스크롤
   setTimeout(() => {
     const current = document.querySelector('.journey-node.pulse-ring');
-    if(current) {
-      current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+    if(current) current.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, 300);
+}
+
+/* ── 홈 스크롤 탑 버튼 초기화 ── */
+function initScrollTopBtn() {
+  const homeScreen = document.getElementById('screen-home');
+  const btn = document.getElementById('scroll-top-btn');
+  if(!homeScreen || !btn) return;
+  homeScreen.addEventListener('scroll', () => {
+    btn.classList.toggle('visible', homeScreen.scrollTop > 200);
+  }, { passive: true });
 }
 
 function renderReviewCard() {
@@ -5464,6 +5492,7 @@ function init() {
   seedPresetAccounts();
   registerStudySW();   // 서비스 워커 등록
   initScrollBounceFix(); // iOS 스크롤 bounce 방지 (전체 화면 적용)
+  initScrollTopBtn();    // 홈 상단 이동 플로팅 버튼
 
   // Check for existing session
   const sessionUid = getCurrentSession();
