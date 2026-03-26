@@ -3103,7 +3103,6 @@ function renderNextLessonCard() {
         <div class="nlc-title" style="color:var(--green-dk);">모든 레슨을 완료했어요</div>
         <div class="nlc-sub">복습으로 실력을 다져봐요 💪</div>
       </div>
-      <div class="nlc-arrow">›</div>
     </div>`;
     return;
   }
@@ -3121,7 +3120,6 @@ function renderNextLessonCard() {
       <div class="nlc-title">${nextLesson.title}</div>
       <div class="nlc-sub">${nextLesson.titleJp || ''} · ${nextLesson.questions?.length || 0}개 문제</div>
     </div>
-    <div class="nlc-arrow">📍</div>
   </div>`;
 }
 
