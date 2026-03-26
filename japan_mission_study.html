@@ -1457,7 +1457,7 @@ body{
           <div class="shop-item-badge" id="hearts-status">현재 하트: 5개</div>
         </div>
         <button class="shop-buy-btn" id="buy-hearts-btn" onclick="buyHearts()">
-          <span class="btn-gem">💎</span> 20
+          <span class="btn-gem">💎</span> 35
         </button>
       </div>
       <div class="shop-item">
@@ -2439,7 +2439,7 @@ function getUnitForLesson(lessonId) {
 
 /* ─── HEART MODAL ─── */
 function showHeartModal() {
-  const cost = 20;
+  const cost = 35;
   const canAfford = S.gems >= cost;
   document.getElementById('hm-sub').textContent = canAfford
     ? `보석 ${cost}개로 하트 ${S.maxHearts}개를 충전할 수 있어요 (현재 💎${S.gems})`
@@ -2451,7 +2451,7 @@ function closeHeartModal() {
   document.getElementById('heart-modal-overlay').classList.remove('active');
 }
 function refillHeartsWithGems() {
-  const cost = 20;
+  const cost = 35;
   if (S.gems < cost) return;
   S.gems -= cost;
   S.hearts = S.maxHearts;
@@ -4091,15 +4091,15 @@ function closeShop() {
 }
 
 function buyHearts() {
-  if(S.gems < 20) { showToast('💎 보석 부족', '보석이 부족해요! 보물 상자를 열어 보석을 모아보세요.', 'warning'); return; }
+  if(S.gems < 35) { showToast('💎 보석 부족', '보석이 부족해요! 보물 상자를 열어 보석을 모아보세요.', 'warning'); return; }
   if(S.hearts >= S.maxHearts) { showToast('❤️ 이미 최대', '하트가 이미 꽉 찼어요!', 'warning'); return; }
-  S.gems -= 20;
+  S.gems -= 35;
   S.hearts = S.maxHearts;
   persistProgress();
   pushMyProgress();
   updateGemDisplay();
   closeShop();
-  showToast('❤️ 하트 충전 완료!', `하트가 ${S.maxHearts}개로 충전됐어요! 💎 -20`, 'success');
+  showToast('❤️ 하트 충전 완료!', `하트가 ${S.maxHearts}개로 충전됐어요! 💎 -35`, 'success');
   renderHome();
 }
 
