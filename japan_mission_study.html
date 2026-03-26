@@ -3297,6 +3297,10 @@ function startLesson(lesson) {
 }
 
 function renderQuestion() {
+  // 새 문제 시작 시 스크롤 맨 위로
+  const qScr = document.getElementById('screen-quiz');
+  if(qScr) qScr.scrollTop = 0;
+
   const total = S.questions.length;
   document.getElementById('quiz-prog').style.width = (S.qIndex / total * 100)+'%';
   let heartsHtml = '';
@@ -3362,6 +3366,12 @@ function selectAnswer(btn, chosen, correct) {
 
   feedback.style.display = 'block';
   continueBtn.style.display = 'block';
+
+  // 계속하기 버튼이 보이도록 스크롤
+  setTimeout(() => {
+    const qScr = document.getElementById('screen-quiz');
+    if(qScr) qScr.scrollTo({ top: qScr.scrollHeight, behavior: 'smooth' });
+  }, 80);
 }
 
 function nextQuestion() {
@@ -5304,9 +5314,29 @@ function closeNudge(e) {
 /* ═══════════════════════════════════════════
    INIT
 ═══════════════════════════════════════════ */
+/* iOS rubber-band 방지: 퀴즈 화면 스크롤 경계에서 기본 bounce 차단 */
+function initQuizScrollFix() {
+  const el = document.getElementById('screen-quiz');
+  if(!el) return;
+  let startY = 0;
+  el.addEventListener('touchstart', e => {
+    startY = e.touches[0].clientY;
+  }, { passive: true });
+  el.addEventListener('touchmove', e => {
+    const dy = e.touches[0].clientY - startY;
+    const atTop    = el.scrollTop <= 0;
+    const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
+    // 맨 위에서 아래로 당기거나, 맨 아래에서 위로 당기면 기본 동작(bounce) 차단
+    if((atTop && dy > 0) || (atBottom && dy < 0)) {
+      e.preventDefault();
+    }
+  }, { passive: false });
+}
+
 function init() {
   seedPresetAccounts();
   registerStudySW();   // 서비스 워커 등록
+  initQuizScrollFix(); // iOS 퀴즈 스크롤 bounce 방지
 
   // Check for existing session
   const sessionUid = getCurrentSession();
