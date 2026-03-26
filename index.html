@@ -1385,6 +1385,41 @@ body{
 }
 .full-btn:active{background:var(--green-dk);}
 .full-btn.outline{background:transparent;border:2px solid var(--border);color:var(--text);}
+/* ── 문자 마스터 ── */
+.auth-guest-btn{display:block;width:100%;margin-top:12px;padding:13px;border:2px solid var(--border);border-radius:var(--r);background:transparent;font-size:14px;font-weight:700;cursor:pointer;color:var(--text2);transition:.15s;}
+.auth-guest-btn:active{background:var(--border);}
+.kana-header{display:flex;align-items:center;gap:12px;padding:16px;border-bottom:1.5px solid var(--border);position:sticky;top:0;background:var(--bg);z-index:10;}
+.kana-back-btn{background:none;border:none;font-size:22px;cursor:pointer;color:var(--text);padding:4px 8px 4px 0;line-height:1;}
+.kana-title{font-size:18px;font-weight:800;color:var(--text);}
+.kana-cat-tabs{display:flex;gap:8px;padding:14px 16px 0;}
+.kana-cat-btn{flex:1;padding:10px 4px;border:2px solid var(--border);border-radius:12px;background:transparent;font-size:13px;font-weight:700;cursor:pointer;color:var(--text2);transition:.15s;}
+.kana-cat-btn.active{background:var(--green);border-color:var(--green);color:#fff;}
+.kana-mode-tabs{display:flex;gap:8px;padding:10px 16px 4px;}
+.kana-mode-btn{flex:1;padding:9px 4px;border:2px solid var(--border);border-radius:12px;background:transparent;font-size:13px;font-weight:700;cursor:pointer;color:var(--text2);transition:.15s;}
+.kana-mode-btn.active{background:#1CB0F6;border-color:#1CB0F6;color:#fff;}
+.kana-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:14px 16px;}
+.kana-grid.bible-grid{grid-template-columns:repeat(2,1fr);}
+.kana-card{background:var(--card);border-radius:12px;padding:12px 4px 10px;text-align:center;border:1.5px solid var(--border);}
+.kana-char{font-size:26px;font-weight:700;color:var(--text);line-height:1.2;}
+.kana-grid.bible-grid .kana-char{font-size:18px;letter-spacing:-0.5px;}
+.kana-rom{font-size:11px;color:var(--green);font-weight:700;margin-top:4px;}
+.kana-kor{font-size:11px;color:var(--text2);margin-top:2px;}
+.kana-quiz-wrap{text-align:center;padding:16px 16px 24px;}
+.kana-quiz-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;font-size:13px;}
+.kana-quiz-progress{color:var(--text2);}
+.kana-quiz-score{color:var(--green);font-weight:700;}
+.kana-quiz-char{font-size:80px;font-weight:700;color:var(--text);line-height:1;margin:8px 0 12px;}
+.kana-quiz-sub{font-size:14px;color:var(--text2);margin-bottom:24px;}
+.kana-quiz-options{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.kana-opt-btn{padding:16px 8px;border:2px solid var(--border);border-radius:14px;background:var(--card);font-size:15px;font-weight:700;cursor:pointer;color:var(--text);transition:.15s;line-height:1.4;}
+.kana-opt-btn:active{opacity:.8;}
+.kana-result{text-align:center;padding:40px 16px 24px;}
+.kana-result-emoji{font-size:64px;margin-bottom:12px;}
+.kana-result-score{font-size:40px;font-weight:800;color:var(--text);margin-bottom:4px;}
+.kana-result-pct{font-size:18px;color:var(--green);font-weight:700;margin-bottom:8px;}
+.kana-result-msg{font-size:15px;color:var(--text2);margin-bottom:28px;}
+.kana-retry-btn{display:block;width:100%;padding:14px;border-radius:var(--r);border:none;font-size:15px;font-weight:800;cursor:pointer;background:var(--green);color:#fff;margin-bottom:10px;}
+.kana-retry-btn.outline{background:transparent;border:2px solid var(--border);color:var(--text);}
 </style>
 </head>
 <body>
@@ -1481,6 +1516,7 @@ body{
         <button class="auth-btn" onclick="doLogin()">로그인</button>
       </div>
     </div>
+    <button class="auth-guest-btn" onclick="openKanaMaster()">📖 문자 마스터 — 로그인 없이 시작</button>
   </div>
 </div>
 
@@ -2030,6 +2066,24 @@ body{
 </div>
 
 <!-- BOTTOM NAV -->
+<!-- ══════════════════ KANA MASTER SCREEN ══════════════════ -->
+<div class="screen" id="screen-kana" style="overflow-y:auto;">
+  <div class="kana-header">
+    <button class="kana-back-btn" onclick="closeKanaMaster()">←</button>
+    <span class="kana-title">📖 문자 마스터</span>
+  </div>
+  <div class="kana-cat-tabs">
+    <button class="kana-cat-btn active" id="kana-cat-hiragana" onclick="setKanaCategory('hiragana')">히라가나</button>
+    <button class="kana-cat-btn" id="kana-cat-katakana" onclick="setKanaCategory('katakana')">가타카나</button>
+    <button class="kana-cat-btn" id="kana-cat-bible" onclick="setKanaCategory('bible')">성경 인물</button>
+  </div>
+  <div class="kana-mode-tabs">
+    <button class="kana-mode-btn active" id="kana-mode-table" onclick="setKanaMode('table')">📋 표로 보기</button>
+    <button class="kana-mode-btn" id="kana-mode-quiz" onclick="setKanaMode('quiz')">🎯 퀴즈</button>
+  </div>
+  <div id="kana-content"></div>
+</div>
+
 <div class="bottom-nav" style="display:none;">
   <button class="nav-btn active" id="nav-home" onclick="goTo('home')">
     <span class="nav-icon">🏠</span>홈
@@ -2090,11 +2144,161 @@ function goTo(name) {
   if(nb) nb.classList.add('active');
   // Hide bottom nav on auth screen
   const nav = document.querySelector('.bottom-nav');
-  if(nav) nav.style.display = name === 'auth' ? 'none' : 'flex';
+  if(nav) nav.style.display = (name === 'auth' || name === 'kana') ? 'none' : 'flex';
   if(name==='home') { renderHome(); updateTopbarUser(); }
   if(name==='stats') renderStats();
   if(name==='settings') renderSettings();
   if(name==='team') renderTeam();
+}
+
+/* ═══════════════════════════════════════════
+   문자 마스터
+═══════════════════════════════════════════ */
+const KANA_DATA = {
+  hiragana: [
+    {c:'あ',r:'a',k:'아'},{c:'い',r:'i',k:'이'},{c:'う',r:'u',k:'우'},{c:'え',r:'e',k:'에'},{c:'お',r:'o',k:'오'},
+    {c:'か',r:'ka',k:'카'},{c:'き',r:'ki',k:'키'},{c:'く',r:'ku',k:'쿠'},{c:'け',r:'ke',k:'케'},{c:'こ',r:'ko',k:'코'},
+    {c:'さ',r:'sa',k:'사'},{c:'し',r:'shi',k:'시'},{c:'す',r:'su',k:'스'},{c:'せ',r:'se',k:'세'},{c:'そ',r:'so',k:'소'},
+    {c:'た',r:'ta',k:'타'},{c:'ち',r:'chi',k:'치'},{c:'つ',r:'tsu',k:'츠'},{c:'て',r:'te',k:'테'},{c:'と',r:'to',k:'토'},
+    {c:'な',r:'na',k:'나'},{c:'に',r:'ni',k:'니'},{c:'ぬ',r:'nu',k:'누'},{c:'ね',r:'ne',k:'네'},{c:'の',r:'no',k:'노'},
+    {c:'は',r:'ha',k:'하'},{c:'ひ',r:'hi',k:'히'},{c:'ふ',r:'fu',k:'후'},{c:'へ',r:'he',k:'헤'},{c:'ほ',r:'ho',k:'호'},
+    {c:'ま',r:'ma',k:'마'},{c:'み',r:'mi',k:'미'},{c:'む',r:'mu',k:'무'},{c:'め',r:'me',k:'메'},{c:'も',r:'mo',k:'모'},
+    {c:'や',r:'ya',k:'야'},{c:'ゆ',r:'yu',k:'유'},{c:'よ',r:'yo',k:'요'},
+    {c:'ら',r:'ra',k:'라'},{c:'り',r:'ri',k:'리'},{c:'る',r:'ru',k:'루'},{c:'れ',r:'re',k:'레'},{c:'ろ',r:'ro',k:'로'},
+    {c:'わ',r:'wa',k:'와'},{c:'を',r:'wo',k:'오'},{c:'ん',r:'n',k:'ん'},
+  ],
+  katakana: [
+    {c:'ア',r:'a',k:'아'},{c:'イ',r:'i',k:'이'},{c:'ウ',r:'u',k:'우'},{c:'エ',r:'e',k:'에'},{c:'オ',r:'o',k:'오'},
+    {c:'カ',r:'ka',k:'카'},{c:'キ',r:'ki',k:'키'},{c:'ク',r:'ku',k:'쿠'},{c:'ケ',r:'ke',k:'케'},{c:'コ',r:'ko',k:'코'},
+    {c:'サ',r:'sa',k:'사'},{c:'シ',r:'shi',k:'시'},{c:'ス',r:'su',k:'스'},{c:'セ',r:'se',k:'세'},{c:'ソ',r:'so',k:'소'},
+    {c:'タ',r:'ta',k:'타'},{c:'チ',r:'chi',k:'치'},{c:'ツ',r:'tsu',k:'츠'},{c:'テ',r:'te',k:'테'},{c:'ト',r:'to',k:'토'},
+    {c:'ナ',r:'na',k:'나'},{c:'ニ',r:'ni',k:'니'},{c:'ヌ',r:'nu',k:'누'},{c:'ネ',r:'ne',k:'네'},{c:'ノ',r:'no',k:'노'},
+    {c:'ハ',r:'ha',k:'하'},{c:'ヒ',r:'hi',k:'히'},{c:'フ',r:'fu',k:'후'},{c:'ヘ',r:'he',k:'헤'},{c:'ホ',r:'ho',k:'호'},
+    {c:'マ',r:'ma',k:'마'},{c:'ミ',r:'mi',k:'미'},{c:'ム',r:'mu',k:'무'},{c:'メ',r:'me',k:'메'},{c:'モ',r:'mo',k:'모'},
+    {c:'ヤ',r:'ya',k:'야'},{c:'ユ',r:'yu',k:'유'},{c:'ヨ',r:'yo',k:'요'},
+    {c:'ラ',r:'ra',k:'라'},{c:'リ',r:'ri',k:'리'},{c:'ル',r:'ru',k:'루'},{c:'レ',r:'re',k:'레'},{c:'ロ',r:'ro',k:'로'},
+    {c:'ワ',r:'wa',k:'와'},{c:'ヲ',r:'wo',k:'오'},{c:'ン',r:'n',k:'ん'},
+  ],
+  bible: [
+    {c:'アダム',r:'Adamu',k:'아담'},{c:'エバ',r:'Eba',k:'하와'},{c:'ノア',r:'Noa',k:'노아'},
+    {c:'アブラハム',r:'Aburahamu',k:'아브라함'},{c:'サラ',r:'Sara',k:'사라'},{c:'イサク',r:'Isaku',k:'이삭'},
+    {c:'ヤコブ',r:'Yakobu',k:'야곱'},{c:'ヨセフ',r:'Yosefu',k:'요셉'},{c:'モーセ',r:'Mōse',k:'모세'},
+    {c:'ダビデ',r:'Dabide',k:'다윗'},{c:'ソロモン',r:'Soromon',k:'솔로몬'},{c:'エリヤ',r:'Eriya',k:'엘리야'},
+    {c:'ダニエル',r:'Danieru',k:'다니엘'},{c:'イエス',r:'Iesu',k:'예수'},{c:'マリア',r:'Maria',k:'마리아'},
+    {c:'ペテロ',r:'Petero',k:'베드로'},{c:'パウロ',r:'Pauro',k:'바울'},{c:'ヨハネ',r:'Yohane',k:'요한'},
+    {c:'マタイ',r:'Matai',k:'마태'},{c:'ルカ',r:'Ruka',k:'누가'},
+  ]
+};
+
+let _kanaCategory = 'hiragana';
+let _kanaMode = 'table';
+let _kanaPrevScreen = 'auth';
+let _kanaQuiz = null;
+
+function openKanaMaster() {
+  _kanaPrevScreen = CU && CU.uid ? 'home' : 'auth';
+  _kanaCategory = 'hiragana';
+  _kanaMode = 'table';
+  goTo('kana');
+  renderKanaTable();
+}
+
+function closeKanaMaster() { goTo(_kanaPrevScreen); }
+
+function setKanaCategory(cat) {
+  _kanaCategory = cat;
+  _kanaMode = 'table';
+  document.getElementById('kana-mode-table').classList.add('active');
+  document.getElementById('kana-mode-quiz').classList.remove('active');
+  ['hiragana','katakana','bible'].forEach(c => {
+    document.getElementById('kana-cat-'+c).classList.toggle('active', c === cat);
+  });
+  renderKanaTable();
+}
+
+function setKanaMode(mode) {
+  _kanaMode = mode;
+  document.getElementById('kana-mode-table').classList.toggle('active', mode === 'table');
+  document.getElementById('kana-mode-quiz').classList.toggle('active', mode === 'quiz');
+  if(mode === 'quiz') startKanaQuiz();
+  else renderKanaTable();
+}
+
+function renderKanaTable() {
+  const data = KANA_DATA[_kanaCategory];
+  const isBible = _kanaCategory === 'bible';
+  let html = `<div class="kana-grid${isBible ? ' bible-grid' : ''}">`;
+  data.forEach(item => {
+    html += `<div class="kana-card">
+      <div class="kana-char">${item.c}</div>
+      ${isBible ? `<div class="kana-rom" style="font-size:13px;color:var(--text);font-weight:800;margin-top:5px;">${item.k}</div><div class="kana-kor">${item.r}</div>` : `<div class="kana-rom">${item.r}</div><div class="kana-kor">${item.k}</div>`}
+    </div>`;
+  });
+  html += '</div>';
+  document.getElementById('kana-content').innerHTML = html;
+}
+
+function startKanaQuiz() {
+  const data = KANA_DATA[_kanaCategory];
+  const shuffled = [...data].sort(() => Math.random() - 0.5);
+  _kanaQuiz = { questions: shuffled.slice(0, Math.min(10, shuffled.length)), idx: 0, score: 0 };
+  renderKanaQuestion();
+}
+
+function renderKanaQuestion() {
+  const { questions, idx, score } = _kanaQuiz;
+  if(idx >= questions.length) { renderKanaResult(); return; }
+  const q = questions[idx];
+  const data = KANA_DATA[_kanaCategory];
+  const isBible = _kanaCategory === 'bible';
+  const wrong = data.filter(d => d.r !== q.r).sort(() => Math.random() - 0.5).slice(0, 3);
+  const options = [...wrong, q].sort(() => Math.random() - 0.5);
+  document.getElementById('kana-content').innerHTML = `
+    <div class="kana-quiz-wrap">
+      <div class="kana-quiz-top">
+        <span class="kana-quiz-progress">${idx + 1} / ${questions.length}</span>
+        <span class="kana-quiz-score">✅ ${score}</span>
+      </div>
+      <div class="kana-quiz-char">${q.c}</div>
+      <div class="kana-quiz-sub">${isBible ? '이 인물의 한국 이름은?' : '이 문자의 읽기는?'}</div>
+      <div class="kana-quiz-options">
+        ${options.map(o => `<button class="kana-opt-btn" onclick="answerKana('${o.r}','${q.r}')">${isBible ? o.k : o.r}</button>`).join('')}
+      </div>
+    </div>`;
+}
+
+function answerKana(selected, correct) {
+  const isCorrect = selected === correct;
+  if(isCorrect) _kanaQuiz.score++;
+  _kanaQuiz.idx++;
+  document.querySelectorAll('.kana-opt-btn').forEach(b => {
+    b.disabled = true;
+    const isBible = _kanaCategory === 'bible';
+    const val = b.textContent.trim();
+    const correctData = KANA_DATA[_kanaCategory].find(d => d.r === correct);
+    const correctLabel = isBible ? correctData?.k : correct;
+    const selectedData = KANA_DATA[_kanaCategory].find(d => d.r === selected);
+    const selectedLabel = isBible ? selectedData?.k : selected;
+    if(val === correctLabel) b.style.background = '#58CC02', b.style.color = '#fff', b.style.borderColor = '#58CC02';
+    else if(val === selectedLabel && !isCorrect) b.style.background = '#FF4B4B', b.style.color = '#fff', b.style.borderColor = '#FF4B4B';
+  });
+  setTimeout(renderKanaQuestion, 700);
+}
+
+function renderKanaResult() {
+  const { questions, score } = _kanaQuiz;
+  const pct = Math.round(score / questions.length * 100);
+  const emoji = pct >= 90 ? '🏆' : pct >= 70 ? '⭐' : pct >= 50 ? '👍' : '💪';
+  const msg = pct >= 90 ? '완벽해요! 선교사 준비 완료! 🎉' : pct >= 70 ? '잘했어요! 조금만 더!' : pct >= 50 ? '절반 이상! 다시 도전해봐요!' : '연습이 실력을 만들어요!';
+  document.getElementById('kana-content').innerHTML = `
+    <div class="kana-result">
+      <div class="kana-result-emoji">${emoji}</div>
+      <div class="kana-result-score">${score} / ${questions.length}</div>
+      <div class="kana-result-pct">${pct}% 정답</div>
+      <div class="kana-result-msg">${msg}</div>
+      <button class="kana-retry-btn" onclick="startKanaQuiz()">🔄 다시 퀴즈</button>
+      <button class="kana-retry-btn outline" onclick="setKanaMode('table')">📋 표로 보기</button>
+    </div>`;
 }
 
 /* ═══════════════════════════════════════════
