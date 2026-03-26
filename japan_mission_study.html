@@ -385,8 +385,8 @@ body{
   text-align:left;transition:all .15s;
   display:flex;align-items:center;gap:10px;
 }
-.choice-btn:not(.disabled):hover{border-color:var(--blue);background:var(--blue-lt);}
-[data-theme="dark"] .choice-btn:not(.disabled):hover{background:#0d2a3a;color:#7dd8fd;}
+@media(hover:hover){.choice-btn:not(.disabled):hover{border-color:var(--blue);background:var(--blue-lt);}}
+@media(hover:hover){[data-theme="dark"] .choice-btn:not(.disabled):hover{background:#0d2a3a;color:#7dd8fd;}}
 .choice-btn:focus{outline:none;}
 .choice-btn:focus:not(:focus-visible){border-color:var(--border);background:var(--bg);color:var(--text);}
 .choice-btn.correct{border-color:var(--green);background:var(--green-lt);color:var(--green-dk);}
