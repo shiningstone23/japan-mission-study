@@ -3792,12 +3792,28 @@ function updateNotifTime(val) {
   }
 }
 
-/* ─── 서비스 워커 등록 ──────────────────────── */
+/* ─── 서비스 워커 등록 + 자동 업데이트 ──────── */
 let _swReg = null;
 async function registerStudySW() {
   if(!('serviceWorker' in navigator)) return;
   try {
-    _swReg = await navigator.serviceWorker.register('/terriermon-sw.js');
+    _swReg = await navigator.serviceWorker.register('/terriermon-sw.js', {
+      updateViaCache: 'none'  // SW 파일 자체를 HTTP 캐시 없이 항상 새로 가져옴
+    });
+
+    // 새 SW가 활성화되면 → 자동 새로고침 (팀원들이 설치 없이 최신 버전 확인)
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      window.location.reload();
+    });
+
+    // 앱 열 때마다 업데이트 체크 (홈화면 앱도 포함)
+    _swReg.update();
+    document.addEventListener('visibilitychange', () => {
+      if(document.visibilityState === 'visible' && _swReg) {
+        _swReg.update();
+      }
+    });
+
     navigator.serviceWorker.addEventListener('message', evt => {
       // SW→페이지 메시지 처리 (필요 시 확장)
     });
