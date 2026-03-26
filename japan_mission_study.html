@@ -225,6 +225,14 @@ body{
 .gift-heart-btn{background:none;border:1.5px solid #FF6B9D;border-radius:20px;padding:4px 10px;font-size:12px;font-weight:700;color:#FF6B9D;cursor:pointer;white-space:nowrap;margin-left:4px;}
 .gift-heart-btn:active{transform:scale(.95);}
 .gift-heart-btn:disabled{opacity:.4;cursor:default;}
+/* 하트 요청 */
+.heart-req-card{margin:12px 16px 4px;padding:14px 16px;background:var(--card);border:1.5px solid #FF6B9D;border-radius:16px;text-align:center;}
+.heart-req-card-title{font-size:13px;font-weight:700;color:var(--text2);margin-bottom:10px;}
+.heart-req-send-btn{padding:10px 20px;border:none;border-radius:20px;background:#FF6B9D;color:#fff;font-size:13px;font-weight:800;cursor:pointer;transition:.15s;}
+.heart-req-send-btn:active{opacity:.8;}
+.heart-req-send-btn:disabled{background:var(--border);color:var(--text2);cursor:default;}
+.heart-req-sent-label{font-size:13px;color:#FF6B9D;font-weight:700;}
+.heart-req-badge{display:inline-block;font-size:11px;background:#FF6B9D22;color:#FF6B9D;border:1px solid #FF6B9D66;border-radius:10px;padding:1px 7px;margin-left:5px;font-weight:700;vertical-align:middle;}
 
 /* Shop Modal */
 .shop-modal-overlay{
@@ -2014,6 +2022,9 @@ body{
       </div>
       <div id="rank-list"></div>
     </div>
+
+    <!-- 하트 요청 -->
+    <div id="heart-req-section"></div>
   </div>
 </div>
 
@@ -2131,6 +2142,7 @@ const S = {
   couponRevealed: false,
   notifTimeout:null,
   heartsSentToday: { date: '', sentTo: [] }, // 하트 선물 하루 5회 / 동일인 중복 방지
+  heartRequestedToday: '',  // 하트 요청 발송한 날짜 (당일 1회 제한)
 };
 
 /* ═══════════════════════════════════════════
@@ -4621,8 +4633,9 @@ function pushMyProgress() {
     darkMode:           S.darkMode,
     qCount:             S.qCount,
     dailyGoal:          S.dailyGoal,
-    heartsSentToday:    S.heartsSentToday,
-    pw:                 (getAllUsers()[CU.uid] || {}).pw || '',
+    heartsSentToday:      S.heartsSentToday,
+    heartRequestedToday:  S.heartRequestedToday || '',
+    pw:                   (getAllUsers()[CU.uid] || {}).pw || '',
   });
 }
 
@@ -4689,6 +4702,9 @@ function restoreFromFirebase() {
       // heartsSentToday: 오늘 날짜와 일치할 때만 복원 (날짜 지난 건 무시)
       if(data.heartsSentToday && data.heartsSentToday.date === new Date().toDateString()) {
         S.heartsSentToday = data.heartsSentToday;
+      }
+      if(data.heartRequestedToday === new Date().toDateString()) {
+        S.heartRequestedToday = data.heartRequestedToday;
       }
       if(data.pw) {
         const users = getAllUsers();
@@ -4865,8 +4881,21 @@ function renderTeam() {
   // TOP 3
   renderTop3(members);
 
-  // 전체 랭킹
-  renderRankList(members);
+  // 하트 요청 현황 fetch 후 랭킹 렌더
+  const today2 = new Date().toDateString();
+  if(_db) {
+    _db.ref('heartRequests').once('value', snap => {
+      const reqs = snap.val() || {};
+      const activeReqs = new Set(
+        Object.entries(reqs).filter(([,d]) => d.date === today2).map(([uid]) => uid)
+      );
+      renderRankList(members, activeReqs);
+      renderHeartReqSection(activeReqs);
+    });
+  } else {
+    renderRankList(members, new Set());
+    renderHeartReqSection(new Set());
+  }
 
   // 마지막 업데이트
   document.getElementById('team-last-updated').textContent =
@@ -4943,7 +4972,7 @@ function renderTop3(members) {
   });
 }
 
-function renderRankList(members) {
+function renderRankList(members, activeReqs = new Set()) {
   const list = document.getElementById('rank-list');
   list.innerHTML = '';
   const colors = ['#58CC02','#1CB0F6','#CE82FF','#FF9600','#FF6B9D','#00CDC1','#FFD900','#FF4B4B','#46A302','#0085C7'];
@@ -4975,11 +5004,12 @@ function renderRankList(members) {
       : `<button class="nudge-btn" onclick="openNudge('${m.uid}','${m.name.replace(/'/g,'')}')" title="찌르기">👆</button>`;
     const actionBtn = nudgeBtn + giftBtn;
 
+    const reqBadge = activeReqs.has(m.uid) ? `<span class="heart-req-badge">❤️ 요청</span>` : '';
     row.innerHTML = `
       <div class="rank-num ${numClass}">${rank}</div>
       <div class="rank-avatar" style="background:${color}">${initial}</div>
       <div class="rank-info">
-        <div class="rank-name">${m.isMe ? '⭐ ' + m.name + ' (나)' : m.name}</div>
+        <div class="rank-name">${m.isMe ? '⭐ ' + m.name + ' (나)' : m.name}${reqBadge}</div>
         <div class="rank-sub">🔥 ${m.streak}일 연속 · 오늘 ${m.todayXP} XP</div>
       </div>
       <div class="rank-xp ${m.xp===0?'zero':''}${m.isMe?' rank-xp-me':''}">${m.xp} XP</div>
@@ -4987,6 +5017,68 @@ function renderRankList(members) {
     `;
     list.appendChild(row);
   });
+}
+
+/* ── 하트 요청 ──────────────────────────── */
+function renderHeartReqSection(activeReqs) {
+  const section = document.getElementById('heart-req-section');
+  if(!section) return;
+  const today = new Date().toDateString();
+  const alreadyRequested = S.heartRequestedToday === today;
+  section.innerHTML = `
+    <div class="heart-req-card">
+      <div class="heart-req-card-title">❤️ 팀원에게 하트 요청하기</div>
+      ${alreadyRequested
+        ? `<div class="heart-req-sent-label">✅ 오늘 요청을 보냈어요! 팀원이 하트를 보내줄 거예요 🙏</div>`
+        : `<button class="heart-req-send-btn" onclick="requestHeart()">하트 요청 보내기</button>
+           <div style="font-size:11px;color:var(--text2);margin-top:8px;">팀원 전체에게 알림이 전송돼요 · 하루 1회</div>`
+      }
+    </div>`;
+}
+
+async function requestHeart() {
+  const today = new Date().toDateString();
+  if(S.heartRequestedToday === today) {
+    showToast('❤️ 이미 요청했어요', '오늘은 이미 하트 요청을 보냈어요!', 'warning'); return;
+  }
+  if(!_db) { showToast('❌ 오프라인', '온라인 상태에서만 요청할 수 있어요', 'warning'); return; }
+
+  // Firebase에 요청 저장
+  S.heartRequestedToday = today;
+  persistProgress();
+  _db.ref(`heartRequests/${CU.uid}`).set({ name: CU.name, date: today, ts: Date.now() });
+
+  // 모든 팀원에게 푸시
+  let sentCount = 0;
+  for(const a of PRESET_ACCOUNTS) {
+    if(a.id === CU.uid) continue;
+    try {
+      const subSnap = await _db.ref(`push_subs/${a.id}`).once('value');
+      const sub = subSnap.val();
+      if(sub) {
+        fetch(PUSH_SERVER_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            subscription: sub,
+            title: `❤️ ${CU.name}${josa(CU.name,'이가')} 하트를 요청해요!`,
+            body: `팀원 화면에서 ${CU.name}님께 하트를 선물해주세요 🙏`,
+            icon: '/japan-mission-study/megumi-icon.jpg',
+          }),
+        }).catch(() => {});
+        sentCount++;
+      }
+      // 앱 열려있는 팀원용 Firebase nudge
+      _db.ref(`nudges/${a.id}`).push({
+        from: CU.uid, fromName: CU.name,
+        message: `${CU.name}${josa(CU.name,'이가')} 하트를 요청했어요! 팀원 화면에서 ❤️+1 버튼을 눌러주세요 🙏`,
+        ts: Date.now(), type: 'heartRequest',
+      });
+    } catch(e) {}
+  }
+
+  renderTeam();
+  showToast('❤️ 요청 완료!', `팀원 ${sentCount}명에게 하트 요청을 보냈어요!`, 'success');
 }
 
 /* ── 찌르기 모달 ──────────────────────────── */
