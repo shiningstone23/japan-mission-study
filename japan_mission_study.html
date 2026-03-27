@@ -5023,9 +5023,18 @@ function restoreFromFirebase() {
       if(data.heartRequestedToday === new Date().toDateString()) {
         S.heartRequestedToday = data.heartRequestedToday;
       }
-      if(data.pw) {
+      if(data.pw || data.name) {
         const users = getAllUsers();
-        if(users[CU.uid]) { users[CU.uid].pw = data.pw; saveAllUsers(users); }
+        if(users[CU.uid]) {
+          if(data.pw) users[CU.uid].pw = data.pw;
+          // Firebase에 저장된 이름이 기본값이 아닌 경우 → 로컬+CU 이름 복원
+          if(data.name && !/^선교대원\s*\d+\s*호$/.test(data.name)) {
+            users[CU.uid].name = data.name;
+            CU.name = data.name;
+            updateTopbarUser();
+          }
+          saveAllUsers(users);
+        }
       }
       persistProgress();  // localStorage에도 저장
       renderHome();       // 화면 업데이트
