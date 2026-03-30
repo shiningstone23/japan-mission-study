@@ -3501,10 +3501,19 @@ function renderReverse(q) {
   const correct = extractKoreanMeaning(q.q) || q.q;
 
   // 오답 보기: 한국어 의미 추출에 성공한 문제만 사용 (실패 시 전체 레슨 풀에서 보충)
+  // 정답과 완전 일치 외에, 정답의 핵심 단어를 포함하는 후보도 제외 (복수 정답 방지)
+  const correctCore = correct.replace(/[()（）\s]/g, '').substring(0, 6);
   const makeCandidates = (pool) =>
     pool.filter(oq => oq.jp !== q.jp)
         .map(oq => extractKoreanMeaning(oq.q))
-        .filter(m => m && m !== correct);
+        .filter(m => {
+          if (!m || m === correct) return false;
+          // 정답 핵심 단어가 후보에 포함되거나, 후보 핵심 단어가 정답에 포함되면 제외
+          const mCore = m.replace(/[()（）\s]/g, '').substring(0, 6);
+          if (correctCore.length >= 3 && m.includes(correctCore)) return false;
+          if (mCore.length >= 3 && correct.includes(mCore)) return false;
+          return true;
+        });
 
   let candidates = makeCandidates(S.lesson.questions || []);
   if (candidates.length < 3) {
