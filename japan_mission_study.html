@@ -4103,6 +4103,8 @@ async function toggleNotif() {
       showToast('📱 앱 내 알림 활성화', '앱이 열려 있을 때 메구미가 알려드려요!', 'success');
       showMascot('cheer', '알림 켜졌어요! 🔔', '공부 안 하면 메구미가 찾아올 거예요 🐾', 'wiggle', 4000);
       scheduleNotification();
+      saveUserPrefs();   // 설정 전용 저장소에 즉시 저장
+      persistProgress();
       return;
     }
     const perm = await Notification.requestPermission();
@@ -4218,6 +4220,7 @@ async function autoEnableNotification() {
     const perm = await Notification.requestPermission();
     if(perm === 'granted') {
       S.notifEnabled = true;
+      saveUserPrefs();   // 설정 전용 저장소에 즉시 저장
       persistProgress();
       pushMyProgress();
       scheduleNotification();
@@ -5016,6 +5019,7 @@ function loginAs(uid, name) {
 
   // 사용자 설정 최종 적용 (버전 초기화·Firebase 복원 이후에도 덮어쓰지 못하도록 마지막에 적용)
   applyUserPrefs(uid);
+  saveUserPrefs();   // 프리퍼런스 키가 없을 때도 반드시 초기화/갱신
 
   updateTopbarUser();
   document.querySelector('.bottom-nav').style.display = 'flex';
