@@ -4285,12 +4285,18 @@ function getNotifMsgs() {
 function fireNotification() {
   if(S.todayXP > 0) return;   // 이미 공부했으면 생략
   const _nm = getNotifMsgs(); const msg = _nm[Math.floor(Math.random() * _nm.length)];
+  // SW 경유로 알림 (백그라운드 탭에서도 동작, 권장 방식)
+  if(_swReg && _swReg.active && Notification.permission === 'granted') {
+    _swReg.active.postMessage({ type: 'FIRE_NOTIF', title: msg.title, body: msg.body });
+    return;
+  }
+  // 폴백: 직접 Notification
   if('Notification' in window && Notification.permission === 'granted') {
     try {
       new Notification(msg.title, {
         body: msg.body,
         tag:  'mission-study-reminder',
-        icon: 'https://em-content.zobj.net/source/google/387/rabbit_1f407.png',
+        icon: '/japan-mission-study/megumi-icon.jpg',
       });
       return;
     } catch(e) {}

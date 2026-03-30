@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mission-jp-v12';
+const CACHE_NAME = 'mission-jp-v13';
 const CACHE_FILES = [
   '/',
   '/japan-mission-study/',
@@ -85,6 +85,23 @@ self.addEventListener('message', evt => {
   }
   if(d.type === 'TEST') {
     fireNotif();
+  }
+  if(d.type === 'FIRE_NOTIF') {
+    const title = d.title || '🐾 메구미링고';
+    const body  = d.body  || '오늘 공부 안 하셨어요! 같이 해요 🇯🇵';
+    self.registration.showNotification(title, {
+      body,
+      tag:      'mission-study-reminder',
+      renotify: true,
+      icon:     '/japan-mission-study/megumi-icon.jpg',
+      badge:    '/japan-mission-study/megumi-icon.jpg',
+      vibrate:  [200, 100, 200],
+      data:     { url: '/japan-mission-study/' },
+      actions:  [
+        { action: 'open',  title: '📚 공부하러 가기' },
+        { action: 'later', title: '⏰ 나중에 할게요' }
+      ]
+    });
   }
 });
 
