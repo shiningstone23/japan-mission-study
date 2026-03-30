@@ -4129,7 +4129,6 @@ function toggleDark() {
   document.documentElement.setAttribute('data-theme', S.darkMode?'dark':'light');
   const dt = document.getElementById('dark-toggle');
   if(S.darkMode) dt.classList.add('on'); else dt.classList.remove('on');
-  saveUserPrefs();
   persistProgress();
   pushMyProgress();
 }
@@ -4140,7 +4139,6 @@ function toggleSound() {
   if(S.sound) st.classList.add('on'); else st.classList.remove('on');
   if(S.sound) showToast('🔊 효과음 켜짐','','success');
   else showToast('🔇 효과음 꺼짐','','');
-  saveUserPrefs();
   persistProgress();
   pushMyProgress();
 }
@@ -4154,7 +4152,6 @@ function setPronToggle(mode) {
     S.pronMode = mode;
   }
   renderSettings();
-  saveUserPrefs();
   persistProgress();
   pushMyProgress();
 }
@@ -4175,7 +4172,6 @@ async function toggleNotif() {
       showToast('📱 앱 내 알림 활성화', '앱이 열려 있을 때 메구미가 알려드려요!', 'success');
       showMascot('cheer', '알림 켜졌어요! 🔔', '공부 안 하면 메구미가 찾아올 거예요 🐾', 'wiggle', 4000);
       scheduleNotification();
-      saveUserPrefs();   // 설정 전용 저장소에 즉시 저장
       persistProgress();
       return;
     }
@@ -4201,7 +4197,6 @@ async function toggleNotif() {
     swPost({ type: 'CANCEL' });
     showToast('🔕 알림 꺼짐', '저도 쉬어요 😴', '');
   }
-  saveUserPrefs();   // 설정 전용 저장소에 즉시 저장
   updateNotifToggleUI();
   updateNotifRowsVis();
   persistProgress();
@@ -4223,7 +4218,6 @@ function updateNotifRowsVis() {
 function updateNotifTime(val) {
   S.notifTime = val;
   if(S.notifTimeout) { clearTimeout(S.notifTimeout); S.notifTimeout = null; }
-  saveUserPrefs();
   persistProgress();
   pushMyProgress();
   if(S.notifEnabled) {
@@ -4292,7 +4286,6 @@ async function autoEnableNotification() {
     const perm = await Notification.requestPermission();
     if(perm === 'granted') {
       S.notifEnabled = true;
-      saveUserPrefs();   // 설정 전용 저장소에 즉시 저장
       persistProgress();
       pushMyProgress();
       scheduleNotification();
@@ -4830,43 +4823,7 @@ function saveUserProgress(uid, data) {
   } catch(e){}
 }
 
-// ── 설정 전용 저장소 (버전 초기화·Firebase 복원과 완전 독립) ──────────
-// missionJP_prefs_<uid>: notifEnabled, showPron 등 사용자 토글 설정만 저장
-// PRESET_ACCOUNTS 전체 초기화(DATA_VERSION 변경)에도 절대 삭제되지 않음
-function loadUserPrefs(uid) {
-  try { return JSON.parse(localStorage.getItem('missionJP_prefs_'+uid) || 'null'); } catch(e) { return null; }
-}
-function saveUserPrefs() {
-  if(!CU.uid) return;
-  try {
-    localStorage.setItem('missionJP_prefs_'+CU.uid, JSON.stringify({
-      notifEnabled: S.notifEnabled,
-      notifTime:    S.notifTime,
-      showPron:     S.showPron,
-      pronMode:     S.pronMode,
-      darkMode:     S.darkMode,
-      sound:        S.sound,
-      qCount:       S.qCount,
-      dailyGoal:    S.dailyGoal,
-    }));
-  } catch(e) {}
-}
-// 로그인/Firebase 복원 후 항상 마지막에 호출 → 사용자 설정이 최종 결정권
-function applyUserPrefs(uid) {
-  const p = loadUserPrefs(uid || CU.uid);
-  if(!p) return;
-  if(p.notifEnabled !== undefined) S.notifEnabled = p.notifEnabled;
-  if(p.notifTime    !== undefined) S.notifTime    = p.notifTime;
-  if(p.showPron     !== undefined) S.showPron     = p.showPron;
-  if(p.pronMode     !== undefined) S.pronMode     = p.pronMode;
-  if(p.darkMode     !== undefined) {
-    S.darkMode = p.darkMode;
-    document.documentElement.setAttribute('data-theme', S.darkMode ? 'dark' : 'light');
-  }
-  if(p.sound        !== undefined) S.sound        = p.sound;
-  if(p.qCount       !== undefined) S.qCount       = p.qCount;
-  if(p.dailyGoal    !== undefined) S.dailyGoal    = p.dailyGoal;
-}
+// loadUserPrefs / saveUserPrefs / applyUserPrefs — 제거됨 (스냅샷/Firebase 단일 소스 방식으로 교체)
 
 // ── Current user state ────────────────────────
 let CU = { uid:null, name:'' };
@@ -5030,10 +4987,32 @@ function loginAs(uid, name) {
   // 버전 체크: progress 스냅샷 외부 키로 확인 (persistProgress에 덮이지 않음)
   const storedVer = localStorage.getItem(VERSION_KEY);
   if(storedVer !== DATA_VERSION) {
-    // 버전 불일치 → 전체 초기화
+    // 버전 불일치 → 게임 진행 초기화 (단, 사용자 설정은 보존)
+    const _savedSettings = saved ? {
+      darkMode:    saved.darkMode,
+      sound:       saved.sound,
+      notifEnabled:saved.notifEnabled,
+      notifTime:   saved.notifTime,
+      showPron:    saved.showPron,
+      pronMode:    saved.pronMode,
+      qCount:      saved.qCount,
+      dailyGoal:   saved.dailyGoal,
+    } : null;
     PRESET_ACCOUNTS.forEach(a => saveUserProgress(a.id, null));
     localStorage.setItem(VERSION_KEY, DATA_VERSION);
     saved = null;
+    // 버전 초기화 후에도 이전 설정 복원 (다크모드·발음표시 등이 초기화되는 버그 방지)
+    if(_savedSettings) {
+      if(_savedSettings.darkMode    !== undefined) S.darkMode    = _savedSettings.darkMode;
+      if(_savedSettings.sound       !== undefined) S.sound       = _savedSettings.sound;
+      if(_savedSettings.notifEnabled!== undefined) S.notifEnabled= _savedSettings.notifEnabled;
+      if(_savedSettings.notifTime   !== undefined) S.notifTime   = _savedSettings.notifTime;
+      if(_savedSettings.showPron    !== undefined) S.showPron    = _savedSettings.showPron;
+      if(_savedSettings.pronMode    !== undefined) S.pronMode    = _savedSettings.pronMode;
+      if(_savedSettings.qCount      !== undefined) S.qCount      = _savedSettings.qCount;
+      if(_savedSettings.dailyGoal   !== undefined) S.dailyGoal   = _savedSettings.dailyGoal;
+      document.documentElement.setAttribute('data-theme', S.darkMode ? 'dark' : 'light');
+    }
   }
   if(saved) {
     const savedDay = saved.savedAt ? new Date(saved.savedAt).toDateString() : '';
@@ -5089,11 +5068,7 @@ function loginAs(uid, name) {
     }
   }
 
-  // 사용자 설정 최종 적용
-  applyUserPrefs(uid);
-  // 프리퍼런스 키가 이미 존재할 때만 업데이트
-  // ※ 없을 때 저장하면 기본값(false)으로 잘못 생성되어 Firebase 복원값을 덮어쓰는 버그 발생
-  if(loadUserPrefs(uid)) saveUserPrefs();
+  // (프리퍼런스 시스템 제거됨 — 스냅샷/Firebase가 단일 소스)
 
   updateTopbarUser();
   document.querySelector('.bottom-nav').style.display = 'flex';
@@ -5439,12 +5414,7 @@ function restoreFromFirebase() {
           saveAllUsers(users);
         }
       }
-      // Firebase 복원 후 프리퍼런스 처리
-      // 프리퍼런스가 없으면 Firebase 값으로 먼저 초기화 (잘못된 기본값 방지)
-      if(!loadUserPrefs(CU.uid)) saveUserPrefs();
-      applyUserPrefs();   // 기존 프리퍼런스가 있으면 그걸 최종 적용 (기기별 설정 우선)
-      saveUserPrefs();    // Firebase·S 상태를 프리퍼런스에 반영
-      persistProgress();  // localStorage에도 저장
+      persistProgress();  // Firebase 복원 결과를 localStorage에 저장
       renderHome();       // 화면 업데이트
       renderSettings();   // 설정 토글 UI 즉시 갱신
       pushMyProgress();   // 복원된 데이터로 Firebase 업데이트
