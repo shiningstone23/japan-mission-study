@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mission-jp-v13';
+const CACHE_NAME = 'mission-jp-v14';
 const CACHE_FILES = [
   '/',
   '/japan-mission-study/',
@@ -210,11 +210,10 @@ function fireNotif() {
     body:      msg.body,
     tag:       'mission-study-reminder',
     renotify:  true,
-    icon:      '/megumi-icon.jpg',   /* 앱 아이콘 (작은 원형) */
-    badge:     '/megumi-icon.jpg',   /* 상태바 아이콘 */
-    image:     '/megumi-icon.jpg',   /* 메구미 배너 이미지 (듀오링고 스타일) */
+    icon:      '/japan-mission-study/megumi-icon.jpg',
+    badge:     '/japan-mission-study/megumi-icon.jpg',
     vibrate:   [200, 100, 200],
-    data: { url: './' },
+    data:      { url: '/japan-mission-study/' },
     actions: [
       { action: 'open',  title: '📚 공부하러 가기' },
       { action: 'later', title: '⏰ 나중에 할게요' }
@@ -222,41 +221,54 @@ function fireNotif() {
   });
 }
 
-/* 알림 클릭 → 앱 포커스 */
+/* 알림 클릭 → 앱 포커스 또는 열기 */
 self.addEventListener('notificationclick', evt => {
   evt.notification.close();
   if(evt.action === 'later') return;
 
+  const targetUrl = (evt.notification.data && evt.notification.data.url)
+    ? evt.notification.data.url
+    : '/japan-mission-study/';
+
   evt.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+      // 이미 열린 앱 탭이 있으면 포커스
       for(const c of list) {
-        if('focus' in c) return c.focus();
+        if(c.url.includes('/japan-mission-study') && 'focus' in c) {
+          return c.focus();
+        }
       }
-      if(clients.openWindow) return clients.openWindow('./');
+      // 없으면 새 탭으로 열기
+      return clients.openWindow(targetUrl);
     })
   );
 });
 
 /* =============================================
-   찌르기 푸시 수신 (앱 닫혀있을 때도 동작)
+   서버 푸시 수신 (앱 닫혀있을 때도 동작)
+   — 찌르기 푸시 + Vercel cron 예약 알림 모두 처리
    ============================================= */
 self.addEventListener('push', evt => {
   if(!evt.data) return;
   let data;
   try { data = evt.data.json(); } catch(e) { return; }
 
+  // payload의 actions / data.url을 그대로 사용 (서버에서 지정한 내용 유지)
+  const notifOptions = {
+    body:     data.body    || '메구미가 기다리고 있어요 🐾',
+    icon:     data.icon    || '/japan-mission-study/megumi-icon.jpg',
+    badge:    data.badge   || '/japan-mission-study/megumi-icon.jpg',
+    tag:      data.tag     || 'mission-push',
+    renotify: true,
+    vibrate:  [200, 100, 200],
+    data:     data.data    || { url: '/japan-mission-study/' },
+    actions:  data.actions || [
+      { action: 'open',  title: '📚 공부하러 가기' },
+      { action: 'later', title: '⏰ 나중에 할게요' }
+    ]
+  };
+
   evt.waitUntil(
-    self.registration.showNotification(data.title || '🐾 찌르기!', {
-      body:    data.body || '팀원이 메시지를 보냈어요.',
-      icon:    data.icon || '/japan-mission-study/megumi-icon.jpg',
-      badge:   '/japan-mission-study/megumi-icon.jpg',
-      tag:     data.tag || 'nudge',
-      renotify: true,
-      vibrate: [200, 100, 200],
-      data:    { url: '/japan-mission-study/' },
-      actions: [
-        { action: 'open', title: '📚 앱 열기' }
-      ]
-    })
+    self.registration.showNotification(data.title || '🐾 메구미링고', notifOptions)
   );
 });

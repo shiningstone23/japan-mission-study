@@ -31,6 +31,9 @@
 [data-theme="dark"]{
   --bg:#131F24;--bg2:#1A2C35;--bg3:#223040;
   --text:#EFEFEF;--text2:#7A8B96;--border:#2A3D4A;
+  --green-lt:#0d2e00;--red-lt:#2e0d0d;--blue-lt:#0d2030;
+  --gold-lt:#2a2600;--purple-lt:#1e0d2e;--orange-lt:#2e1a00;
+  --pink-lt:#2e0d1a;--teal-lt:#00201f;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html,body{height:100%;overflow:hidden;}
@@ -175,6 +178,8 @@ body{
 .journey-chest.opened{
   border:2px solid #58CC02;background:#F0FFF0;cursor:default;
 }
+[data-theme="dark"] .journey-chest.ready{background:#2a2400;}
+[data-theme="dark"] .journey-chest.opened{background:#0d2210;}
 .journey-chest.locked{opacity:.5;}
 @keyframes chestPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,217,0,.4)}50%{box-shadow:0 0 0 8px rgba(255,217,0,0)}}
 .chest-icon{display:flex;align-items:center;justify-content:center;}
@@ -188,6 +193,7 @@ body{
 .path-gem-chest{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 20px;border-radius:14px;cursor:pointer;transition:transform .15s;border:2px dashed #E0E0E0;}
 .path-gem-chest:active{transform:scale(.95);}
 .path-gem-chest.ready{border:2px solid #1CB0F6;background:#E8F7FF;animation:gemChestPulse 2s ease infinite;}
+[data-theme="dark"] .path-gem-chest.ready{background:#0a1e2e;}
 .path-gem-chest.opened{border:2px solid #BDBDBD;background:var(--bg2);cursor:default;opacity:.6;}
 .path-gem-chest.locked{opacity:.4;cursor:pointer;}
 .path-gem-icon{font-size:28px;line-height:1;}
@@ -281,6 +287,7 @@ body{
   border-radius:8px;font-size:11px;font-weight:700;
   background:#E8F5E9;color:#2E7D32;
 }
+[data-theme="dark"] .shop-item-badge{background:#0d2210;color:#4ade80;}
 .shop-buy-btn{
   flex-shrink:0;display:flex;align-items:center;gap:4px;
   background:var(--green);color:#fff;border:none;
@@ -298,12 +305,13 @@ body{
   align-items:center;justify-content:center;flex-direction:column;
 }
 .title-modal-box{
-  background:#fff;border-radius:24px;padding:32px 40px;
+  background:var(--bg2);border-radius:24px;padding:32px 40px;
   text-align:center;max-width:320px;width:90%;
   box-shadow:0 8px 32px rgba(0,0,0,.25);
 }
 .title-modal-emoji{font-size:56px;margin-bottom:12px;}
 .title-modal-header{font-size:13px;color:var(--text2);font-weight:700;margin-bottom:8px;letter-spacing:.05em;}
+[data-theme="dark"] .title-modal-header{color:var(--text);}
 .title-modal-title-text{font-size:24px;font-weight:800;color:var(--text);margin-bottom:20px;}
 .title-modal-btn{
   background:var(--green);color:#fff;border:none;
@@ -435,7 +443,7 @@ body{
 }
 .choice-btn:not(.disabled):hover{border-color:var(--blue);background:var(--blue-lt);}
 .choice-btn:focus{outline:none;}
-.choice-btn:focus:not(:focus-visible){border-color:var(--border);background:#fff;}
+.choice-btn:focus:not(:focus-visible){border-color:var(--border);background:var(--bg);}
 .choice-btn.correct{border-color:var(--green);background:var(--green-lt);color:var(--green-dk);}
 .choice-btn.wrong{border-color:var(--red);background:var(--red-lt);color:var(--red);}
 .choice-btn.disabled{cursor:not-allowed;}
@@ -496,6 +504,10 @@ body{
 .qtb-rev{background:#f3e8ff;color:#7c3aed;}
 .qtb-arr{background:#fff3e0;color:#e65c00;}
 .qtb-fill{background:#e8faf0;color:#16a34a;}
+[data-theme="dark"] .qtb-mcq{background:#0a1e2e;color:#1CB0F6;}
+[data-theme="dark"] .qtb-rev{background:#1a0d2e;color:#CE82FF;}
+[data-theme="dark"] .qtb-arr{background:#1e1000;color:#FF9600;}
+[data-theme="dark"] .qtb-fill{background:#0d2210;color:#58CC02;}
 
 /* ── ARRANGE TYPE ────────────────────────────── */
 .arr-answer-bar{min-height:54px;border:2.5px dashed var(--border);border-radius:var(--r-sm);padding:8px 12px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;background:var(--bg);margin:8px 0 4px;transition:border-color .2s;}
@@ -511,14 +523,17 @@ body{
 
 /* ── REVERSE TYPE ─────────────────────────────── */
 .rev-jp-card{background:linear-gradient(135deg,#eef6ff,#dbeafe);border:2.5px solid #1CB0F6;border-radius:var(--r);padding:22px 20px;text-align:center;margin:8px 0;}
+[data-theme="dark"] .rev-jp-card{background:linear-gradient(135deg,#0a1e2e,#0d2a3d);}
 .rev-jp-text{font-size:28px;font-weight:800;color:var(--text);line-height:1.3;}
 .rev-jp-reading{font-size:14px;color:var(--text2);margin-top:6px;font-weight:600;}
 
 /* ── FILL TYPE ────────────────────────────────── */
 .fill-card{background:linear-gradient(135deg,#fffbeb,#fef3c7);border:2.5px solid #FFD900;border-radius:var(--r);padding:20px;text-align:center;margin:8px 0;}
+[data-theme="dark"] .fill-card{background:linear-gradient(135deg,#1e1a00,#2a2400);}
 .fill-card-label{font-size:11px;font-weight:700;color:#92400e;letter-spacing:.05em;margin-bottom:6px;}
 .fill-card-text{font-size:26px;font-weight:800;color:var(--text);}
 .fill-card-hint{font-size:14px;color:#92400e;margin-top:8px;font-weight:600;}
+[data-theme="dark"] .fill-card-label,[data-theme="dark"] .fill-card-hint,[data-theme="dark"] .fill-card .speak-hint{color:#f59e0b;}
 .fill-card-meaning{font-size:13px;color:var(--text2);margin-top:3px;}
 
 /* ── REVIEW CARD (Home) ───────────────────────── */
@@ -539,11 +554,14 @@ body{
 .nlc-arrow{font-size:22px;flex-shrink:0;opacity:.5;}
 
 .review-card{background:linear-gradient(135deg,#fff3e0,#ffe0b2);border:2px solid #FF9600;border-radius:var(--r);padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;margin-bottom:12px;transition:all .15s;-webkit-tap-highlight-color:transparent;}
+[data-theme="dark"] .review-card{background:linear-gradient(135deg,#1e1000,#2a1800);}
 .review-card:active{transform:scale(.98);}
 .rc-icon{font-size:30px;}
 .rc-title{font-size:15px;font-weight:800;color:#c45200;}
 .rc-sub{font-size:12px;color:#a04000;margin-top:2px;}
 .rc-arrow{margin-left:auto;font-size:20px;color:#c45200;font-weight:700;}
+[data-theme="dark"] .rc-title,[data-theme="dark"] .rc-arrow{color:#FF9600;}
+[data-theme="dark"] .rc-sub{color:#cc7a00;}
 
 /* ── RESULT ──────────────────────────────────── */
 .result-body{
@@ -810,6 +828,9 @@ body{
 .top3-xp.gold{color:#D4A000;}
 .top3-xp.silver{color:#78909C;}
 .top3-xp.bronze{color:#FF7043;}
+[data-theme="dark"] .top3-xp.gold{color:#FFD900;}
+[data-theme="dark"] .top3-xp.silver{color:#B0BEC5;}
+[data-theme="dark"] .top3-xp.bronze{color:#FFAB76;}
 
 /* 전체 랭킹 리스트 */
 .rank-section{padding:14px 16px 0;}
@@ -835,6 +856,9 @@ body{
 .rank-num.top1{color:#D4A000;}
 .rank-num.top2{color:#78909C;}
 .rank-num.top3{color:#FF7043;}
+[data-theme="dark"] .rank-num.top1{color:#FFD900;}
+[data-theme="dark"] .rank-num.top2{color:#B0BEC5;}
+[data-theme="dark"] .rank-num.top3{color:#FFAB76;}
 .rank-avatar{
   width:36px;height:36px;border-radius:50%;
   display:flex;align-items:center;justify-content:center;
@@ -1197,6 +1221,10 @@ body{
 .jp-word.tapped{background:var(--blue-lt);}
 .jp-word-furi{font-size:9px;color:var(--blue);font-weight:600;line-height:1;white-space:nowrap;min-height:10px;}
 [data-theme="dark"] .jp-word-furi{color:#7dd8fd;}
+.choice-furi-wrap{display:inline-flex;flex-wrap:wrap;align-items:flex-end;gap:2px;pointer-events:none;}
+.choice-furi-word{display:inline-flex;flex-direction:column;align-items:center;gap:1px;}
+.choice-furi-rt{font-size:9px;color:var(--blue);font-weight:600;line-height:1;min-height:10px;white-space:nowrap;}
+[data-theme="dark"] .choice-furi-rt{color:#7dd8fd;}
 .jp-word-text{font-size:20px;font-weight:800;color:var(--text);line-height:1.2;
   border-bottom:1.5px dashed var(--border);}
 .jp-word:active .jp-word-text,.jp-word.tapped .jp-word-text{border-color:var(--blue);}
@@ -2307,6 +2335,7 @@ const S = {
   notifEnabled:true, notifTime:'09:00',
   darkMode:false, sound:true,
   qCount:5,
+  showPron:false, pronMode:'roman',
   enabledCats:new Set(),
   lessonStars: {},  // lessonId → 0,1,2,3
   titles: new Set(),        // earned title strings
@@ -3317,6 +3346,19 @@ function hideWordPopup() {
   document.querySelectorAll('.jp-word.tapped,.rev-jp-word.tapped').forEach(el => el.classList.remove('tapped'));
 }
 
+// 보기 버튼 전용: 클릭 핸들러 없이 후리가나만 표시 (단어 팝업 미발동)
+function buildChoiceHtml(text, showPron, pronMode) {
+  if (!showPron) return text;
+  const tokens = (typeof WORD_DATA !== 'undefined' && WORD_DATA[text]) ? WORD_DATA[text] : null;
+  if (!tokens) return text;
+  return '<span class="choice-furi-wrap">' +
+    tokens.map(t => {
+      const surface = t[0], reading = t[1] || surface;
+      const furi = pronMode === 'hira' ? reading : '';
+      return `<span class="choice-furi-word"><span class="choice-furi-rt">${furi}</span><span>${surface}</span></span>`;
+    }).join('') + '</span>';
+}
+
 function buildJpWordSpans(jp, showPron, pronMode, wordCls, furiCls, textCls, rowCls) {
   const tokens = (typeof WORD_DATA !== 'undefined' && WORD_DATA[jp]) ? WORD_DATA[jp] : null;
   if (!tokens) {
@@ -3367,11 +3409,12 @@ function renderMCQ(q) {
       </div>
       <button class="speak-btn" id="speak-mcq" onclick="speakJapanese('${jpSafe}',this)" title="발음 듣기">🔊</button>
     </div>` : (q.jp ? `<div class="quiz-jp-row"><button class="speak-btn" id="speak-mcq" onclick="speakJapanese('${jpSafe}',this)" title="발음 듣기">🔊</button></div>` : '')}
+    ${S.showPron && S.pronMode === 'roman' && q.romaji ? `<div class="quiz-jp-furigana" style="margin:2px 0 4px;">${q.romaji}</div>` : ''}
     ${showReading && !S.showPron ? `<div class="reading-bubble"><span class="reading-label">발음</span><span class="reading-text">${q.reading}</span></div>` : ''}
     <div class="quiz-choices" id="choices">
       ${shuffled.map((origIdx,i)=>`
         <button class="choice-btn" data-choice="${q.choices[origIdx].replace(/"/g,'&quot;')}" onclick="selectAnswer(this,'${q.choices[origIdx].replace(/'/g,"\\'")}','${correctChoice.replace(/'/g,"\\'")}')">
-          <span class="choice-key">${keys[i]}</span>${q.choices[origIdx]}
+          <span class="choice-key">${keys[i]}</span>${buildChoiceHtml(q.choices[origIdx], S.showPron, S.pronMode)}
         </button>`).join('')}
     </div>
     <div class="quiz-feedback" id="feedback"></div>`;
@@ -3407,6 +3450,7 @@ function renderReverse(q) {
     <div class="quiz-question" style="font-size:16px;">이 일본어의 뜻은?</div>
     <div class="rev-jp-card">
       ${buildJpWordSpans(q.jp, S.showPron, S.pronMode, 'rev-jp-word', 'rev-jp-word-furi', 'rev-jp-word-text', 'rev-jp-word-row')}
+      ${S.showPron && S.pronMode === 'roman' && q.romaji ? `<div class="rev-jp-furigana">${q.romaji}</div>` : ''}
       ${q.reading && !S.showPron ? `<div class="rev-jp-reading">${q.reading}</div>` : ''}
       <div class="speak-hint" onclick="speakJapanese('${jpSafe}',document.getElementById('speak-rev'))">🔊 탭하여 발음 듣기</div>
       <button class="speak-btn" id="speak-rev" style="margin:8px auto 0;display:flex;" onclick="speakJapanese('${jpSafe}',this)">🔊</button>
@@ -3444,7 +3488,7 @@ function renderFill(q) {
     <div class="quiz-choices" id="choices">
       ${shuffled.map((origIdx,i)=>`
         <button class="choice-btn" data-choice="${q.choices[origIdx].replace(/"/g,'&quot;')}" onclick="selectAnswer(this,'${q.choices[origIdx].replace(/'/g,"\\'")}','${correctChoice.replace(/'/g,"\\'")}')">
-          <span class="choice-key">${keys[i]}</span>${q.choices[origIdx]}
+          <span class="choice-key">${keys[i]}</span>${buildChoiceHtml(q.choices[origIdx], S.showPron, S.pronMode)}
         </button>`).join('')}
     </div>
     <div class="quiz-feedback" id="feedback"></div>`;
@@ -3475,7 +3519,10 @@ function renderArrange(q) {
     <div class="quiz-prompt"><span class="quiz-type-badge qtb-arr">🃏 단어 배열</span>&nbsp;${S.qIndex+1} / ${total}</div>
     <div class="quiz-question" style="font-size:16px;">카드를 올바른 순서로 배열하세요</div>
     <div class="arr-speak-row">
-      <div class="quiz-jp" style="font-size:14px;flex:1;">${hint}</div>
+      <div style="flex:1;">
+        <div class="quiz-jp" style="font-size:14px;">${hint}</div>
+        ${S.showPron && S.pronMode === 'roman' && q.romaji ? `<div class="quiz-jp-furigana" style="margin-top:2px;">${q.romaji}</div>` : ''}
+      </div>
       <button class="speak-btn" id="speak-arr" onclick="speakJapanese('${jpSafe}',this)" title="발음 듣기">🔊</button>
     </div>
     <div class="arr-answer-bar" id="arr-answer"><span class="arr-placeholder">카드를 여기에 놓으세요</span></div>
@@ -4029,6 +4076,7 @@ function toggleShowPron() {
   if(btn) S.showPron ? btn.classList.add('on') : btn.classList.remove('on');
   if(wrap) wrap.style.display = S.showPron ? 'block' : 'none';
   persistProgress();
+  pushMyProgress();
 }
 
 function setPronMode(mode) {
@@ -4036,6 +4084,7 @@ function setPronMode(mode) {
   document.getElementById('pron-roman-btn').classList.toggle('active', mode === 'roman');
   document.getElementById('pron-hira-btn').classList.toggle('active', mode === 'hira');
   persistProgress();
+  pushMyProgress();
 }
 
 /* ═══════════════════════════════════════════
@@ -4058,6 +4107,7 @@ async function toggleNotif() {
       showToast('🔔 알림 활성화 완료!', '공부 안 하면 메구미가 알려드려요 🐾', 'success');
       showMascot('cheer', '알림 켜졌어요! 🔔', `매일 ${S.notifTime}에 공부 안 했으면 알려드릴게요!`, 'wiggle', 4500);
       scheduleNotification();
+      registerPushSubscription(); // 권한 허용 직후 서버 푸시 구독 등록
     } else if(perm === 'denied') {
       showToast('❌ 알림 권한 거부됨', '브라우저 설정에서 알림을 허용해주세요', 'warning');
       S.notifEnabled = true;
@@ -4149,18 +4199,23 @@ function getDaysLeft() {
 /* ─── 로그인 시 알림 자동 활성화 ─── */
 async function autoEnableNotification() {
   if(!('Notification' in window)) return;
-  // 이미 활성화되어 있으면 스케줄만 재등록
-  if(S.notifEnabled) { scheduleNotification(); return; }
+  // 이미 활성화되어 있으면 스케줄만 재등록 + 구독 갱신
+  if(S.notifEnabled) {
+    scheduleNotification();
+    registerPushSubscription(); // 구독이 만료되었을 수 있으므로 항상 갱신
+    return;
+  }
   // 이미 거부된 경우 강제 요청 안 함
   if(Notification.permission === 'denied') return;
-  // 권한 요청 (granted 또는 default → 자동 활성화)
+  // 권한 요청
   try {
     const perm = await Notification.requestPermission();
-    if(perm === 'granted' || perm === 'default') {
+    if(perm === 'granted') {
       S.notifEnabled = true;
       persistProgress();
       pushMyProgress();
       scheduleNotification();
+      registerPushSubscription(); // 권한 허용 직후 구독 등록
       // 토글 UI 반영
       const t = document.getElementById('notif-toggle');
       if(t) t.classList.add('on');
@@ -4724,6 +4779,8 @@ function buildProgressSnapshot() {
     couponRevealed: S.couponRevealed,
     gems: S.gems,
     streakShield: S.streakShield,
+    heartsSentToday: S.heartsSentToday,
+    heartRequestedToday: S.heartRequestedToday || '',
     savedAt: Date.now()
   };
 }
@@ -4760,6 +4817,13 @@ function applyProgressSnapshot(snap) {
   S.couponRevealed = snap.couponRevealed ?? false;
   S.gems = snap.gems ?? 0;
   S.streakShield = snap.streakShield ?? false;
+  // heartsSentToday: 오늘 날짜와 일치할 때만 복원
+  if(snap.heartsSentToday && snap.heartsSentToday.date === new Date().toDateString()) {
+    S.heartsSentToday = snap.heartsSentToday;
+  }
+  if(snap.heartRequestedToday === new Date().toDateString()) {
+    S.heartRequestedToday = snap.heartRequestedToday;
+  }
   document.documentElement.setAttribute('data-theme', S.darkMode?'dark':'light');
 }
 
@@ -5147,9 +5211,12 @@ function pushMyProgress() {
     maxHearts:          S.maxHearts,
     notifTime:          S.notifTime,
     notifEnabled:       S.notifEnabled,
+    daysLeft:           getDaysLeft(),
     sound:              S.sound,
     darkMode:           S.darkMode,
     qCount:             S.qCount,
+    showPron:           S.showPron,
+    pronMode:           S.pronMode,
     dailyGoal:          S.dailyGoal,
     heartsSentToday:      S.heartsSentToday,
     heartRequestedToday:  S.heartRequestedToday || '',
@@ -5217,6 +5284,8 @@ function restoreFromFirebase() {
       }
       if(data.qCount          !== undefined) S.qCount          = data.qCount;
       if(data.dailyGoal       !== undefined) S.dailyGoal       = data.dailyGoal;
+      if(data.showPron        !== undefined) S.showPron        = data.showPron;
+      if(data.pronMode        !== undefined) S.pronMode        = data.pronMode;
       // heartsSentToday: 오늘 날짜와 일치할 때만 복원 (날짜 지난 건 무시)
       if(data.heartsSentToday && data.heartsSentToday.date === new Date().toDateString()) {
         S.heartsSentToday = data.heartsSentToday;
