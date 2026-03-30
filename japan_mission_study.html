@@ -4807,7 +4807,10 @@ function applyProgressSnapshot(snap) {
   S.darkMode = snap.darkMode ?? false;
   S.sound = snap.sound ?? true;
   S.qCount = snap.qCount ?? 5;
-  S.showPron = snap.showPron ?? false;
+  // showPron: 명시적으로 false인 경우만 false, undefined는 현재 값 유지 (구버전 스냅샷 보호)
+  if(snap.showPron === true)  S.showPron = true;
+  if(snap.showPron === false) S.showPron = false;
+  // snap에 showPron이 없으면(구버전) S.showPron은 기존 값(초기화 시 false) 그대로
   S.pronMode = snap.pronMode ?? 'roman';
   S.enabledCats = new Set(snap.enabledCats ?? []);
   S.lessonStars = snap.lessonStars ?? {};
@@ -4972,6 +4975,8 @@ function loginAs(uid, name) {
   document.getElementById('screen-auth').classList.remove('active');
   initTTSVoice();
   goTo('home');
+  // 설정 화면이 따로 열려있을 수 있으므로 설정 UI도 동기화
+  renderSettings();
   // 알림 기본 활성화: 처음 로그인 시 자동 권한 요청 후 활성화
   autoEnableNotification();
   checkMissedStudy();                          // 어제 미공부 확인
@@ -5284,8 +5289,10 @@ function restoreFromFirebase() {
       }
       if(data.qCount          !== undefined) S.qCount          = data.qCount;
       if(data.dailyGoal       !== undefined) S.dailyGoal       = data.dailyGoal;
-      if(data.showPron        !== undefined) S.showPron        = data.showPron;
-      if(data.pronMode        !== undefined) S.pronMode        = data.pronMode;
+      // showPron: Firebase에 있으면 복원, 없으면(구버전 데이터) 기존 값 유지 — false로 강제하지 않음
+      if(data.showPron === true)  S.showPron = true;
+      if(data.showPron === false) S.showPron = false;
+      if(data.pronMode !== undefined) S.pronMode = data.pronMode;
       // heartsSentToday: 오늘 날짜와 일치할 때만 복원 (날짜 지난 건 무시)
       if(data.heartsSentToday && data.heartsSentToday.date === new Date().toDateString()) {
         S.heartsSentToday = data.heartsSentToday;
@@ -5308,6 +5315,10 @@ function restoreFromFirebase() {
       }
       persistProgress();  // localStorage에도 저장
       renderHome();       // 화면 업데이트
+      // 설정 화면이 열려있으면 설정 UI도 갱신 (showPron 등 토글이 즉시 반영되도록)
+      if(document.getElementById('screen-settings') && document.getElementById('screen-settings').classList.contains('active')) {
+        renderSettings();
+      }
       pushMyProgress();   // 복원된 데이터로 Firebase 업데이트
     } else {
       // Firebase에도 데이터 없음 → 현재 상태(초기값) push
