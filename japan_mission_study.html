@@ -3404,11 +3404,26 @@ function hiraganaToRomaji(str) {
   return result;
 }
 
+// 순수 히라가나·카타카나 여부 판정 (한국어·한자 섞인 보기는 변환 불필요)
+function isPureKana(str) {
+  return /^[\u3040-\u30ff\uff65-\uff9fーァ-ヶ〜\s・]+$/.test(str);
+}
+
 // 보기 버튼 전용: 클릭 핸들러 없이 후리가나만 표시 (단어 팝업 미발동)
 function buildChoiceHtml(text, showPron, pronMode) {
   if (!showPron) return text;
   const tokens = (typeof WORD_DATA !== 'undefined' && WORD_DATA[text]) ? WORD_DATA[text] : null;
-  if (!tokens) return text;
+
+  if (!tokens) {
+    // WORD_DATA 없는 경우 — 순수 가나(히라가나/카타카나)면 직접 변환
+    if(pronMode === 'roman' && isPureKana(text)) {
+      const furi = hiraganaToRomaji(text);
+      return `<span class="choice-furi-word"><span class="choice-furi-rt">${furi}</span><span>${text}</span></span>`;
+    }
+    // 히라가나 모드에서 한자가 섞인 보기 → 표시 불가, 그냥 텍스트만
+    return text;
+  }
+
   return '<span class="choice-furi-wrap">' +
     tokens.map(t => {
       const surface = t[0], reading = t[1] || surface;
@@ -5074,9 +5089,11 @@ function loginAs(uid, name) {
     }
   }
 
-  // 사용자 설정 최종 적용 (버전 초기화·Firebase 복원 이후에도 덮어쓰지 못하도록 마지막에 적용)
+  // 사용자 설정 최종 적용
   applyUserPrefs(uid);
-  saveUserPrefs();   // 프리퍼런스 키가 없을 때도 반드시 초기화/갱신
+  // 프리퍼런스 키가 이미 존재할 때만 업데이트
+  // ※ 없을 때 저장하면 기본값(false)으로 잘못 생성되어 Firebase 복원값을 덮어쓰는 버그 발생
+  if(loadUserPrefs(uid)) saveUserPrefs();
 
   updateTopbarUser();
   document.querySelector('.bottom-nav').style.display = 'flex';
@@ -5422,8 +5439,11 @@ function restoreFromFirebase() {
           saveAllUsers(users);
         }
       }
-      // Firebase 복원 후에도 사용자 설정(prefs)이 최종 결정권
-      applyUserPrefs();
+      // Firebase 복원 후 프리퍼런스 처리
+      // 프리퍼런스가 없으면 Firebase 값으로 먼저 초기화 (잘못된 기본값 방지)
+      if(!loadUserPrefs(CU.uid)) saveUserPrefs();
+      applyUserPrefs();   // 기존 프리퍼런스가 있으면 그걸 최종 적용 (기기별 설정 우선)
+      saveUserPrefs();    // Firebase·S 상태를 프리퍼런스에 반영
       persistProgress();  // localStorage에도 저장
       renderHome();       // 화면 업데이트
       renderSettings();   // 설정 토글 UI 즉시 갱신
