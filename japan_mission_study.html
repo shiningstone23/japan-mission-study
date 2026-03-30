@@ -3346,6 +3346,71 @@ function hideWordPopup() {
   document.querySelectorAll('.jp-word.tapped,.rev-jp-word.tapped').forEach(el => el.classList.remove('tapped'));
 }
 
+// 히라가나 → 로마자 변환 (Hepburn 표기법)
+function hiraganaToRomaji(str) {
+  // 2글자 조합 (きゃ 등) 먼저 처리
+  const combo = {
+    'きゃ':'kya','きゅ':'kyu','きょ':'kyo',
+    'しゃ':'sha','しゅ':'shu','しょ':'sho',
+    'ちゃ':'cha','ちゅ':'chu','ちょ':'cho',
+    'にゃ':'nya','にゅ':'nyu','にょ':'nyo',
+    'ひゃ':'hya','ひゅ':'hyu','ひょ':'hyo',
+    'みゃ':'mya','みゅ':'myu','みょ':'myo',
+    'りゃ':'rya','りゅ':'ryu','りょ':'ryo',
+    'ぎゃ':'gya','ぎゅ':'gyu','ぎょ':'gyo',
+    'じゃ':'ja', 'じゅ':'ju', 'じょ':'jo',
+    'ぢゃ':'ja', 'ぢゅ':'ju', 'ぢょ':'jo',
+    'びゃ':'bya','びゅ':'byu','びょ':'byo',
+    'ぴゃ':'pya','ぴゅ':'pyu','ぴょ':'pyo',
+  };
+  const single = {
+    'あ':'a','い':'i','う':'u','え':'e','お':'o',
+    'か':'ka','き':'ki','く':'ku','け':'ke','こ':'ko',
+    'さ':'sa','し':'shi','す':'su','せ':'se','そ':'so',
+    'た':'ta','ち':'chi','つ':'tsu','て':'te','と':'to',
+    'な':'na','に':'ni','ぬ':'nu','ね':'ne','の':'no',
+    'は':'ha','ひ':'hi','ふ':'fu','へ':'he','ほ':'ho',
+    'ま':'ma','み':'mi','む':'mu','め':'me','も':'mo',
+    'や':'ya','ゆ':'yu','よ':'yo',
+    'ら':'ra','り':'ri','る':'ru','れ':'re','ろ':'ro',
+    'わ':'wa','ゐ':'i','ゑ':'e','を':'o','ん':'n',
+    'が':'ga','ぎ':'gi','ぐ':'gu','げ':'ge','ご':'go',
+    'ざ':'za','じ':'ji','ず':'zu','ぜ':'ze','ぞ':'zo',
+    'だ':'da','ぢ':'ji','づ':'zu','で':'de','ど':'do',
+    'ば':'ba','び':'bi','ぶ':'bu','べ':'be','ぼ':'bo',
+    'ぱ':'pa','ぴ':'pi','ぷ':'pu','ぺ':'pe','ぽ':'po',
+    'ぁ':'a','ぃ':'i','ぅ':'u','ぇ':'e','ぉ':'o',
+    'ゃ':'ya','ゅ':'yu','ょ':'yo','っ':'','ー':'-','〜':'~',
+  };
+  let result = '';
+  let i = 0;
+  while (i < str.length) {
+    if (str[i] === 'っ') {
+      // 촉음: 다음 자음 앞에 같은 자음 추가
+      const nextTwo = str[i+1] + (str[i+2] || '');
+      const nextOne = str[i+1] || '';
+      const nxt = combo[nextTwo] || single[nextOne] || '';
+      result += nxt ? nxt[0] : '';
+      i++;
+      continue;
+    }
+    if (str[i] === 'ん') {
+      // 모음/y 앞의 ん은 n'으로
+      const next = str[i+1] || '';
+      const isVowel = 'あいうえおアイウエオaeiou'.includes(next);
+      result += isVowel ? "n'" : 'n';
+      i++;
+      continue;
+    }
+    const two = str[i] + (str[i+1] || '');
+    if (combo[two]) { result += combo[two]; i += 2; continue; }
+    if (single[str[i]]) { result += single[str[i]]; i++; continue; }
+    // 한자·카타카나·기타는 그대로
+    result += str[i]; i++;
+  }
+  return result;
+}
+
 // 보기 버튼 전용: 클릭 핸들러 없이 후리가나만 표시 (단어 팝업 미발동)
 function buildChoiceHtml(text, showPron, pronMode) {
   if (!showPron) return text;
@@ -3354,7 +3419,9 @@ function buildChoiceHtml(text, showPron, pronMode) {
   return '<span class="choice-furi-wrap">' +
     tokens.map(t => {
       const surface = t[0], reading = t[1] || surface;
-      const furi = pronMode === 'hira' ? reading : '';
+      const furi = pronMode === 'hira' ? reading
+                 : pronMode === 'roman' ? hiraganaToRomaji(reading)
+                 : '';
       return `<span class="choice-furi-word"><span class="choice-furi-rt">${furi}</span><span>${surface}</span></span>`;
     }).join('') + '</span>';
 }
@@ -3363,7 +3430,6 @@ function buildJpWordSpans(jp, showPron, pronMode, wordCls, furiCls, textCls, row
   const tokens = (typeof WORD_DATA !== 'undefined' && WORD_DATA[jp]) ? WORD_DATA[jp] : null;
   if (!tokens) {
     // Fallback: whole text as one clickable span
-    const furi = showPron ? (pronMode === 'hira' ? '' : '') : '';
     return `<div class="${rowCls}">
       <div class="${wordCls}" onclick="showWordPopup(this,'${jp.replace(/'/g,"\\'")}','','')">
         <span class="${furiCls}"></span>
@@ -3376,7 +3442,10 @@ function buildJpWordSpans(jp, showPron, pronMode, wordCls, furiCls, textCls, row
     const reading = t[1] || surface;
     const meaning = t[2] || '';
     const furiText = showPron
-      ? (pronMode === 'hira' ? reading : '') : '';
+      ? (pronMode === 'hira' ? reading
+       : pronMode === 'roman' ? hiraganaToRomaji(reading)
+       : '')
+      : '';
     const surfSafe = surface.replace(/'/g,"\\'").replace(/"/g,'&quot;');
     const readSafe = reading.replace(/'/g,"\\'");
     const meanSafe = meaning.replace(/'/g,"\\'");
