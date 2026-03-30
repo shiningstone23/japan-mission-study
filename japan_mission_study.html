@@ -4055,6 +4055,7 @@ function toggleDark() {
   document.documentElement.setAttribute('data-theme', S.darkMode?'dark':'light');
   const dt = document.getElementById('dark-toggle');
   if(S.darkMode) dt.classList.add('on'); else dt.classList.remove('on');
+  saveUserPrefs();
   persistProgress();
   pushMyProgress();
 }
@@ -4065,6 +4066,7 @@ function toggleSound() {
   if(S.sound) st.classList.add('on'); else st.classList.remove('on');
   if(S.sound) showToast('🔊 효과음 켜짐','','success');
   else showToast('🔇 효과음 꺼짐','','');
+  saveUserPrefs();
   persistProgress();
   pushMyProgress();
 }
@@ -4075,6 +4077,7 @@ function toggleShowPron() {
   const wrap = document.getElementById('pron-mode-wrap');
   if(btn) S.showPron ? btn.classList.add('on') : btn.classList.remove('on');
   if(wrap) wrap.style.display = S.showPron ? 'block' : 'none';
+  saveUserPrefs();   // 설정 전용 저장소에 즉시 저장
   persistProgress();
   pushMyProgress();
 }
@@ -4083,6 +4086,7 @@ function setPronMode(mode) {
   S.pronMode = mode;
   document.getElementById('pron-roman-btn').classList.toggle('active', mode === 'roman');
   document.getElementById('pron-hira-btn').classList.toggle('active', mode === 'hira');
+  saveUserPrefs();   // 설정 전용 저장소에 즉시 저장
   persistProgress();
   pushMyProgress();
 }
@@ -4123,6 +4127,7 @@ async function toggleNotif() {
     swPost({ type: 'CANCEL' });
     showToast('🔕 알림 꺼짐', '저도 쉬어요 😴', '');
   }
+  saveUserPrefs();   // 설정 전용 저장소에 즉시 저장
   updateNotifToggleUI();
   updateNotifRowsVis();
   persistProgress();
@@ -4144,6 +4149,7 @@ function updateNotifRowsVis() {
 function updateNotifTime(val) {
   S.notifTime = val;
   if(S.notifTimeout) { clearTimeout(S.notifTimeout); S.notifTimeout = null; }
+  saveUserPrefs();
   persistProgress();
   pushMyProgress();
   if(S.notifEnabled) {
@@ -4749,6 +4755,44 @@ function saveUserProgress(uid, data) {
   } catch(e){}
 }
 
+// ── 설정 전용 저장소 (버전 초기화·Firebase 복원과 완전 독립) ──────────
+// missionJP_prefs_<uid>: notifEnabled, showPron 등 사용자 토글 설정만 저장
+// PRESET_ACCOUNTS 전체 초기화(DATA_VERSION 변경)에도 절대 삭제되지 않음
+function loadUserPrefs(uid) {
+  try { return JSON.parse(localStorage.getItem('missionJP_prefs_'+uid) || 'null'); } catch(e) { return null; }
+}
+function saveUserPrefs() {
+  if(!CU.uid) return;
+  try {
+    localStorage.setItem('missionJP_prefs_'+CU.uid, JSON.stringify({
+      notifEnabled: S.notifEnabled,
+      notifTime:    S.notifTime,
+      showPron:     S.showPron,
+      pronMode:     S.pronMode,
+      darkMode:     S.darkMode,
+      sound:        S.sound,
+      qCount:       S.qCount,
+      dailyGoal:    S.dailyGoal,
+    }));
+  } catch(e) {}
+}
+// 로그인/Firebase 복원 후 항상 마지막에 호출 → 사용자 설정이 최종 결정권
+function applyUserPrefs(uid) {
+  const p = loadUserPrefs(uid || CU.uid);
+  if(!p) return;
+  if(p.notifEnabled !== undefined) S.notifEnabled = p.notifEnabled;
+  if(p.notifTime    !== undefined) S.notifTime    = p.notifTime;
+  if(p.showPron     !== undefined) S.showPron     = p.showPron;
+  if(p.pronMode     !== undefined) S.pronMode     = p.pronMode;
+  if(p.darkMode     !== undefined) {
+    S.darkMode = p.darkMode;
+    document.documentElement.setAttribute('data-theme', S.darkMode ? 'dark' : 'light');
+  }
+  if(p.sound        !== undefined) S.sound        = p.sound;
+  if(p.qCount       !== undefined) S.qCount       = p.qCount;
+  if(p.dailyGoal    !== undefined) S.dailyGoal    = p.dailyGoal;
+}
+
 // ── Current user state ────────────────────────
 let CU = { uid:null, name:'' };
 
@@ -4970,13 +5014,15 @@ function loginAs(uid, name) {
     }
   }
 
+  // 사용자 설정 최종 적용 (버전 초기화·Firebase 복원 이후에도 덮어쓰지 못하도록 마지막에 적용)
+  applyUserPrefs(uid);
+
   updateTopbarUser();
   document.querySelector('.bottom-nav').style.display = 'flex';
   document.getElementById('screen-auth').classList.remove('active');
   initTTSVoice();
   goTo('home');
-  // 설정 화면이 따로 열려있을 수 있으므로 설정 UI도 동기화
-  renderSettings();
+  renderSettings(); // 설정 UI를 최신 S 상태로 동기화
   // 알림 기본 활성화: 처음 로그인 시 자동 권한 요청 후 활성화
   autoEnableNotification();
   checkMissedStudy();                          // 어제 미공부 확인
@@ -5313,12 +5359,11 @@ function restoreFromFirebase() {
           saveAllUsers(users);
         }
       }
+      // Firebase 복원 후에도 사용자 설정(prefs)이 최종 결정권
+      applyUserPrefs();
       persistProgress();  // localStorage에도 저장
       renderHome();       // 화면 업데이트
-      // 설정 화면이 열려있으면 설정 UI도 갱신 (showPron 등 토글이 즉시 반영되도록)
-      if(document.getElementById('screen-settings') && document.getElementById('screen-settings').classList.contains('active')) {
-        renderSettings();
-      }
+      renderSettings();   // 설정 토글 UI 즉시 갱신
       pushMyProgress();   // 복원된 데이터로 Firebase 업데이트
     } else {
       // Firebase에도 데이터 없음 → 현재 상태(초기값) push
