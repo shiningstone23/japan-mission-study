@@ -1186,6 +1186,23 @@ body{
 [data-theme="dark"] .reading-text{color:#7dd8fd;}
 .quiz-jp{font-size:16px;color:var(--text2);margin-top:4px;font-weight:600;}
 
+/* ── FURIGANA (pronunciation above JP text) ──── */
+.quiz-jp-wrap{display:inline-flex;flex-direction:column;align-items:flex-start;gap:1px;}
+.quiz-jp-furigana{font-size:10px;color:var(--blue);font-weight:600;letter-spacing:.03em;line-height:1.2;white-space:pre-wrap;}
+[data-theme="dark"] .quiz-jp-furigana{color:#7dd8fd;}
+.rev-jp-furigana{font-size:12px;color:var(--blue);font-weight:600;letter-spacing:.03em;margin-bottom:4px;}
+[data-theme="dark"] .rev-jp-furigana{color:#7dd8fd;}
+
+/* ── PRON MODE PICKER (settings) ──────────────── */
+.pron-mode-row{display:flex;gap:8px;margin-top:10px;}
+.pron-mode-btn{flex:1;padding:10px 6px;border:2px solid var(--border);border-radius:12px;
+  background:transparent;font-size:13px;font-weight:700;cursor:pointer;color:var(--text2);
+  transition:.15s;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.pron-mode-btn.active{background:var(--blue);border-color:var(--blue);color:#fff;}
+.pron-mode-btn.active .pmd-sub{color:rgba(255,255,255,.8);}
+.pmd-jp{font-size:18px;font-weight:800;}
+.pmd-sub{font-size:10px;color:var(--text2);}
+
 /* ── GOSPEL TRACT PHONETIC ───────────────────── */
 .jp-reading{
   font-size:11px;color:#1CB0F6;
@@ -1964,6 +1981,32 @@ body{
           <div class="sr-sub">맞추면 소리로 알려줘요</div>
         </div>
         <button class="toggle on" id="sound-toggle" onclick="toggleSound()"></button>
+      </div>
+    </div>
+
+    <!-- Pronunciation Section -->
+    <div class="settings-section">
+      <div class="ss-header">🈳 발음 표시</div>
+      <div class="setting-row" style="flex-direction:column;align-items:stretch;gap:12px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div class="sr-left">
+            <div class="sr-label">한자 위 발음 표시</div>
+            <div class="sr-sub">퀴즈에서 한자 위에 읽는 법을 보여줘요</div>
+          </div>
+          <button class="toggle" id="pron-toggle" onclick="toggleShowPron()"></button>
+        </div>
+        <div id="pron-mode-wrap" style="display:none;">
+          <div class="pron-mode-row">
+            <button class="pron-mode-btn active" id="pron-roman-btn" onclick="setPronMode('roman')">
+              <span class="pmd-jp" style="font-size:13px;letter-spacing:.05em;">ni hon go</span>
+              <span class="pmd-sub">로마자 (Romanized)</span>
+            </button>
+            <button class="pron-mode-btn" id="pron-hira-btn" onclick="setPronMode('hira')">
+              <span class="pmd-jp">にほんご</span>
+              <span class="pmd-sub">히라가나 (Japanese)</span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -3185,6 +3228,11 @@ function dedupChoices(q) {
   return { choices, correct };
 }
 
+function getPronText(q) {
+  if (!S.showPron) return '';
+  return S.pronMode === 'hira' ? (q.hira || '') : (q.romaji || '');
+}
+
 function renderMCQ(q) {
   const total = S.questions.length;
   const keys = ['A','B','C','D'];
@@ -3201,10 +3249,13 @@ function renderMCQ(q) {
     <div class="quiz-prompt"><span class="quiz-type-badge qtb-mcq">🎯 일본어 고르기</span>&nbsp;${S.qIndex+1} / ${total}</div>
     <div class="quiz-question">${q.q}</div>
     ${showJp ? `<div class="quiz-jp-row">
-      <div class="quiz-jp" style="flex:1;">${q.jp}</div>
+      <div class="quiz-jp-wrap" style="flex:1;">
+        ${getPronText(q) ? `<div class="quiz-jp-furigana">${getPronText(q)}</div>` : ''}
+        <div class="quiz-jp">${q.jp}</div>
+      </div>
       <button class="speak-btn" id="speak-mcq" onclick="speakJapanese('${jpSafe}',this)" title="발음 듣기">🔊</button>
     </div>` : (q.jp ? `<div class="quiz-jp-row"><button class="speak-btn" id="speak-mcq" onclick="speakJapanese('${jpSafe}',this)" title="발음 듣기">🔊</button></div>` : '')}
-    ${showReading ? `<div class="reading-bubble"><span class="reading-label">발음</span><span class="reading-text">${q.reading}</span></div>` : ''}
+    ${showReading && !S.showPron ? `<div class="reading-bubble"><span class="reading-label">발음</span><span class="reading-text">${q.reading}</span></div>` : ''}
     <div class="quiz-choices" id="choices">
       ${shuffled.map((origIdx,i)=>`
         <button class="choice-btn" data-choice="${q.choices[origIdx].replace(/"/g,'&quot;')}" onclick="selectAnswer(this,'${q.choices[origIdx].replace(/'/g,"\\'")}','${correctChoice.replace(/'/g,"\\'")}')">
@@ -3243,8 +3294,9 @@ function renderReverse(q) {
     <div class="quiz-prompt"><span class="quiz-type-badge qtb-rev">🔄 뜻 맞추기</span>&nbsp;${S.qIndex+1} / ${total}</div>
     <div class="quiz-question" style="font-size:16px;">이 일본어의 뜻은?</div>
     <div class="rev-jp-card" onclick="speakJapanese('${jpSafe}',document.getElementById('speak-rev'))">
+      ${getPronText(q) ? `<div class="rev-jp-furigana">${getPronText(q)}</div>` : ''}
       <div class="rev-jp-text">${q.jp}</div>
-      ${q.reading ? `<div class="rev-jp-reading">${q.reading}</div>` : ''}
+      ${q.reading && !S.showPron ? `<div class="rev-jp-reading">${q.reading}</div>` : ''}
       <div class="speak-hint">🔊 탭하여 발음 듣기</div>
       <button class="speak-btn" id="speak-rev" style="margin:8px auto 0;display:flex;" onclick="event.stopPropagation();speakJapanese('${jpSafe}',this)">🔊</button>
     </div>
@@ -3756,6 +3808,16 @@ function renderSettings() {
 
   document.getElementById('notif-time').value = S.notifTime;
 
+  // Pron toggle
+  const pt = document.getElementById('pron-toggle');
+  if(pt) S.showPron ? pt.classList.add('on') : pt.classList.remove('on');
+  const pw = document.getElementById('pron-mode-wrap');
+  if(pw) pw.style.display = S.showPron ? 'block' : 'none';
+  const prb = document.getElementById('pron-roman-btn');
+  const phb = document.getElementById('pron-hira-btn');
+  if(prb) prb.classList.toggle('active', S.pronMode === 'roman');
+  if(phb) phb.classList.toggle('active', S.pronMode === 'hira');
+
 }
 
 async function forceAppUpdate() {
@@ -3847,6 +3909,22 @@ function toggleSound() {
   else showToast('🔇 효과음 꺼짐','','');
   persistProgress();
   pushMyProgress();
+}
+
+function toggleShowPron() {
+  S.showPron = !S.showPron;
+  const btn = document.getElementById('pron-toggle');
+  const wrap = document.getElementById('pron-mode-wrap');
+  if(btn) S.showPron ? btn.classList.add('on') : btn.classList.remove('on');
+  if(wrap) wrap.style.display = S.showPron ? 'block' : 'none';
+  persistProgress();
+}
+
+function setPronMode(mode) {
+  S.pronMode = mode;
+  document.getElementById('pron-roman-btn').classList.toggle('active', mode === 'roman');
+  document.getElementById('pron-hira-btn').classList.toggle('active', mode === 'hira');
+  persistProgress();
 }
 
 /* ═══════════════════════════════════════════
@@ -4520,6 +4598,7 @@ function buildProgressSnapshot() {
     allCompleted:[...S.allCompleted],
     notifEnabled:S.notifEnabled, notifTime:S.notifTime,
     darkMode:S.darkMode, sound:S.sound, qCount:S.qCount,
+    showPron:S.showPron, pronMode:S.pronMode,
     enabledCats:[...S.enabledCats],
     lessonStars: S.lessonStars,
     titles: [...S.titles],
@@ -4554,6 +4633,8 @@ function applyProgressSnapshot(snap) {
   S.darkMode = snap.darkMode ?? false;
   S.sound = snap.sound ?? true;
   S.qCount = snap.qCount ?? 5;
+  S.showPron = snap.showPron ?? false;
+  S.pronMode = snap.pronMode ?? 'roman';
   S.enabledCats = new Set(snap.enabledCats ?? []);
   S.lessonStars = snap.lessonStars ?? {};
   S.titles = new Set(snap.titles ?? []);
@@ -4689,6 +4770,7 @@ function loginAs(uid, name) {
     S.gems=0; S.streakShield=false; S.couponRevealed=false;
     S.notifEnabled=true; S.notifTime='09:00';
     S.darkMode=false; S.sound=true; S.qCount=5;
+    S.showPron=false; S.pronMode='roman';
     S.enabledCats=new Set(['greet','intro','faith','mission','lords','creed','gospel','praise']);
     S.lastHeartRefillDate = new Date().toDateString(); // 초기화 시 오늘 날짜 기록
   }
