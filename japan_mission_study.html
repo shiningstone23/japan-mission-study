@@ -3407,9 +3407,8 @@ function renderReverse(q) {
     <div class="rev-jp-card">
       ${buildJpWordSpans(q.jp, S.showPron, S.pronMode, 'rev-jp-word', 'rev-jp-word-furi', 'rev-jp-word-text', 'rev-jp-word-row')}
       ${q.reading && !S.showPron ? `<div class="rev-jp-reading">${q.reading}</div>` : ''}
-      <div onclick="speakJapanese('${jpSafe}',document.getElementById('speak-rev'))" style="margin-top:6px;font-size:11px;color:var(--text2);cursor:pointer;">🔊 탭하여 발음 듣기</div>
-      <div class="speak-hint">🔊 탭하여 발음 듣기</div>
-      <button class="speak-btn" id="speak-rev" style="margin:8px auto 0;display:flex;" onclick="event.stopPropagation();speakJapanese('${jpSafe}',this)">🔊</button>
+      <div class="speak-hint" onclick="speakJapanese('${jpSafe}',document.getElementById('speak-rev'))">🔊 탭하여 발음 듣기</div>
+      <button class="speak-btn" id="speak-rev" style="margin:8px auto 0;display:flex;" onclick="speakJapanese('${jpSafe}',this)">🔊</button>
     </div>
     <div class="quiz-choices" id="choices">
       ${allChoices.map((c,i)=>`
