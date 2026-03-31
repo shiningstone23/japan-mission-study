@@ -41,9 +41,7 @@ body{
   font-family:-apple-system,'Hiragino Kaku Gothic Pro','Yu Gothic UI','Malgun Gothic',sans-serif;
   background:var(--bg);color:var(--text);
   display:flex;flex-direction:column;height:100vh;max-height:100vh;
-  padding-top:max(env(safe-area-inset-top), 50px);
   padding-bottom:60px; /* fallback; overridden by JS syncNavPadding() */
-  padding-top:env(safe-area-inset-top);
   padding-bottom:calc(36px + env(safe-area-inset-bottom));
   transition:background .3s,color .3s;
 }
@@ -66,7 +64,7 @@ body{
 .topbar{
   display:flex;align-items:center;justify-content:space-between;
   padding:8px 16px 8px;
-  padding-top:max(env(safe-area-inset-top), 8px);
+  padding-top:calc(env(safe-area-inset-top) + 16px);
   background:var(--bg);
   border-bottom:1.5px solid var(--border);flex-shrink:0;
   position:sticky;top:0;z-index:10;
@@ -1326,6 +1324,7 @@ rt{font-size:10px;font-weight:500;color:var(--blue);letter-spacing:.02em;}
   display:flex;flex-direction:column;align-items:center;
   justify-content:center;min-height:100%;
   padding:24px 20px;
+  padding-top:calc(24px + env(safe-area-inset-top));
   background:var(--bg);overflow-y:auto;
 }
 .auth-hero{text-align:center;margin-bottom:28px;}
@@ -4387,6 +4386,10 @@ async function toggleNotif() {
       persistProgress();
       return;
     }
+    if(Notification.permission === 'denied') {
+      showToast('이 방식으로 다시 켤 수 없습니다', '기기 설정에서 알림을 다시 허용해주세요', 'warning');
+      return;
+    }
     const perm = await Notification.requestPermission();
     if(perm === 'granted') {
       S.notifEnabled = true;
@@ -4404,10 +4407,13 @@ async function toggleNotif() {
       scheduleNotification();
     }
   } else {
+    const shouldDisable = window.confirm('알림을 끄면 일일 공부 알림과 팀원 푸시 구독이 함께 해제됩니다.\n다시 켤 때는 기기 설정에서 알림 허용 상태를 확인해야 할 수 있습니다.\n계속할까요?');
+    if(!shouldDisable) return;
     S.notifEnabled = false;
     if(S.notifTimeout) { clearTimeout(S.notifTimeout); S.notifTimeout = null; }
     swPost({ type: 'CANCEL' });
-    showToast('🔕 알림 꺼짐', '저도 쉬어요 😴', '');
+    await unsubscribePushSubscription();
+    showToast('🔕 알림 꺼짐', '일일 알림과 푸시 구독을 해제했어요', '');
   }
   updateNotifToggleUI();
   updateNotifRowsVis();
@@ -4443,7 +4449,7 @@ let _swReg = null;
 async function registerStudySW() {
   if(!('serviceWorker' in navigator)) return;
   try {
-    _swReg = await navigator.serviceWorker.register('/terriermon-sw.js', {
+    _swReg = await navigator.serviceWorker.register('/japan-mission-study/terriermon-sw.js', {
       updateViaCache: 'none'  // SW 파일 자체를 HTTP 캐시 없이 항상 새로 가져옴
     });
 
@@ -4507,6 +4513,47 @@ async function autoEnableNotification() {
       if(t) t.classList.add('on');
     }
   } catch(e) {}
+}
+
+async function runPwaPushStartup() {
+  if(!isStandalonePwaMode()) return false;
+  if(!_db || !CU.uid) return false;
+  if(!('Notification' in window)) return false;
+
+  const firstPwaLaunch = isFirstPwaLaunch();
+  const shouldRunSelfTest = firstPwaLaunch || !hasSuccessfulPushSelfTest();
+  if(!firstPwaLaunch && S.notifEnabled === false) return false;
+
+  try {
+    if(firstPwaLaunch && Notification.permission === 'default') {
+      const perm = await Notification.requestPermission();
+      if(perm !== 'granted') return true;
+    } else if(Notification.permission !== 'granted') {
+      return firstPwaLaunch;
+    }
+
+    S.notifEnabled = true;
+    updateNotifToggleUI();
+    updateNotifRowsVis();
+    persistProgress();
+    scheduleNotification();
+    await registerPushSubscription();
+    if(shouldRunSelfTest) {
+      const verified = await verifyPushSubscriptionAndNotifySelf();
+      if(!verified) {
+        showToast('⚠️ 푸시 등록 확인 실패', '권한 또는 구독 저장 상태를 다시 확인해주세요', 'warning');
+      } else {
+        markPushSelfTestSuccess();
+      }
+    }
+    pushMyProgress();
+    return true;
+  } catch(e) {
+    console.warn('PWA push startup failed:', e);
+    return firstPwaLaunch;
+  } finally {
+    if(firstPwaLaunch) markPwaLaunchSeen();
+  }
 }
 
 /* ─── 알림 스케줄 (SW + setTimeout 이중) ─── */
@@ -5035,6 +5082,44 @@ function saveUserProgress(uid, data) {
   } catch(e){}
 }
 
+const PWA_FIRST_LAUNCH_KEY = 'missionJP_pwa_first_launch_seen';
+const PUSH_SELF_TEST_OK_KEY = 'missionJP_push_self_test_ok';
+try { localStorage.removeItem('missionJP_push_debug_logs'); } catch(e){}
+
+function isStandalonePwaMode() {
+  try {
+    const standalone = !!(window.matchMedia && (
+      window.matchMedia('(display-mode: standalone)').matches ||
+      window.matchMedia('(display-mode: fullscreen)').matches
+    ));
+    return standalone ||
+      window.navigator.standalone === true ||
+      document.referrer.startsWith('android-app://');
+  } catch(e) {
+    return window.navigator && window.navigator.standalone === true;
+  }
+}
+
+function hasSeenPwaLaunch() {
+  try { return localStorage.getItem(PWA_FIRST_LAUNCH_KEY) === '1'; } catch(e){ return false; }
+}
+
+function isFirstPwaLaunch() {
+  return isStandalonePwaMode() && !hasSeenPwaLaunch();
+}
+
+function markPwaLaunchSeen() {
+  try { localStorage.setItem(PWA_FIRST_LAUNCH_KEY, '1'); } catch(e){}
+}
+
+function hasSuccessfulPushSelfTest() {
+  try { return localStorage.getItem(PUSH_SELF_TEST_OK_KEY) === '1'; } catch(e){ return false; }
+}
+
+function markPushSelfTestSuccess() {
+  try { localStorage.setItem(PUSH_SELF_TEST_OK_KEY, '1'); } catch(e){}
+}
+
 // loadUserPrefs / saveUserPrefs / applyUserPrefs — 제거됨 (스냅샷/Firebase 단일 소스 방식으로 교체)
 
 // ── Current user state ────────────────────────
@@ -5163,6 +5248,24 @@ function showAuthError(formId, msg) {
   el.textContent = msg; el.classList.add('show');
 }
 
+async function syncCurrentUserNameFromFirebase() {
+  if(!_db || !CU.uid) return CU.name;
+  try {
+    const snap = await _db.ref(`team/${CU.uid}`).once('value');
+    const data = snap.val() || {};
+    const users = getAllUsers();
+    const user = users[CU.uid] || { name: CU.name, pw: '', createdAt: Date.now() };
+    if(data.pw) user.pw = data.pw;
+    if(data.name && !/^선교대원\s*\d+\s*호$/.test(data.name)) {
+      user.name = data.name;
+      CU.name = data.name;
+    }
+    users[CU.uid] = user;
+    saveAllUsers(users);
+  } catch(e) {}
+  return CU.name;
+}
+
 // ── Login ─────────────────────────────────────
 function doLogin() {
   const id = document.getElementById('login-id').value.trim();
@@ -5194,7 +5297,7 @@ function doLogin() {
 }
 
 // ── Core login ───────────────────────────────
-function loginAs(uid, name) {
+async function loginAs(uid, name) {
   CU = { uid, name };
   setCurrentSession(uid);
   let saved = loadUserProgress(uid);
@@ -5283,6 +5386,8 @@ function loginAs(uid, name) {
   }
 
   // (프리퍼런스 시스템 제거됨 — 스냅샷/Firebase가 단일 소스)
+  const hasFirebase = initFirebase();
+  if(hasFirebase) await syncCurrentUserNameFromFirebase();
 
   updateTopbarUser();
   document.querySelector('.bottom-nav').style.display = 'flex';
@@ -5290,26 +5395,17 @@ function loginAs(uid, name) {
   initTTSVoice();
   goTo('home');
   renderSettings(); // 설정 UI를 최신 S 상태로 동기화
-  // 알림 기본 활성화: 처음 로그인 시 자동 권한 요청 후 활성화
-  autoEnableNotification();
+  // 설치형 PWA는 별도 startup 흐름에서 권한 요청/구독을 처리
+  if(!isStandalonePwaMode()) autoEnableNotification();
   checkMissedStudy();                          // 어제 미공부 확인
   // 웹 푸시 구독 등록 (찌르기 앱 푸시용)
-  registerPushSubscription();
+  if(!isStandalonePwaMode()) registerPushSubscription();
   // Firebase 연결 & 팀 동기화
-  if(initFirebase()) {
-    // 로그인 직후 Firebase에서 이름·비밀번호 즉시 동기화 (새 기기 대응)
-    _db.ref(`team/${CU.uid}`).once('value').then(snap => {
-      const data = snap.val();
-      if(data && data.name && !/^선교대원\s*\d+\s*호$/.test(data.name)) {
-        CU.name = data.name;
-        const users = getAllUsers();
-        if(users[CU.uid]) { users[CU.uid].name = data.name; saveAllUsers(users); }
-        updateTopbarUser();
-      }
-    }).catch(() => {});
+  if(hasFirebase) {
     subscribeTeam();
     subscribeNudges();
     subscribeHeartGifts();
+    runPwaPushStartup();
     if(saved) {
       // 로컬 데이터 있음 → 바로 Firebase에 업로드
       pushMyProgress();
@@ -5320,9 +5416,9 @@ function loginAs(uid, name) {
   }
 
   setTimeout(()=>{
-    showToast(`👋 ${name}님, 환영해요! ✝️🇯🇵`, '오늘도 함께 공부해요!', 'success');
+    showToast(`👋 ${CU.name}님, 환영해요! ✝️🇯🇵`, '오늘도 함께 공부해요!', 'success');
     if(S.todayXP === 0) {
-      showMascot('cheer', `${name.split(' ')[0]}님, 안녕하세요! 🐾`, '오늘도 메구미가 응원할게요!', 'wiggle', 4000);
+      showMascot('cheer', `${CU.name.split(' ')[0]}님, 안녕하세요! 🐾`, '오늘도 메구미가 응원할게요!', 'wiggle', 4000);
     }
   }, 400);
 }
@@ -5630,16 +5726,16 @@ function restoreFromFirebase() {
       }
       if(data.pw || data.name) {
         const users = getAllUsers();
-        if(users[CU.uid]) {
-          if(data.pw) users[CU.uid].pw = data.pw;
-          // Firebase에 저장된 이름이 기본값이 아닌 경우 → 로컬+CU 이름 복원
-          if(data.name && !/^선교대원\s*\d+\s*호$/.test(data.name)) {
-            users[CU.uid].name = data.name;
-            CU.name = data.name;
-            updateTopbarUser();
-          }
-          saveAllUsers(users);
+        const user = users[CU.uid] || { name: CU.name, pw: '', createdAt: Date.now() };
+        if(data.pw) user.pw = data.pw;
+        // Firebase에 저장된 이름이 기본값이 아닌 경우 → 로컬+CU 이름 복원
+        if(data.name && !/^선교대원\s*\d+\s*호$/.test(data.name)) {
+          user.name = data.name;
+          CU.name = data.name;
+          updateTopbarUser();
         }
+        users[CU.uid] = user;
+        saveAllUsers(users);
       }
       persistProgress();  // Firebase 복원 결과를 localStorage에 저장
       renderHome();       // 화면 업데이트
@@ -5706,9 +5802,75 @@ async function registerPushSubscription() {
       });
     }
     // Firebase에 내 구독 저장
-    _db.ref(`push_subs/${CU.uid}`).set(JSON.parse(JSON.stringify(sub)));
+    await _db.ref(`push_subs/${CU.uid}`).set(JSON.parse(JSON.stringify(sub)));
+    return sub;
   } catch(e) {
     console.warn('Push subscription failed:', e);
+    return null;
+  }
+}
+
+async function unsubscribePushSubscription() {
+  try {
+    if('serviceWorker' in navigator && 'PushManager' in window) {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if(sub) await sub.unsubscribe();
+    }
+  } catch(e) {
+    console.warn('Push unsubscribe failed:', e);
+  }
+
+  if(_db && CU.uid) {
+    try {
+      await _db.ref(`push_subs/${CU.uid}`).remove();
+    } catch(e) {
+      console.warn('Push subscription removal failed:', e);
+    }
+  }
+}
+
+async function verifyPushSubscriptionAndNotifySelf() {
+  if(!('Notification' in window) || Notification.permission !== 'granted') return false;
+  if(!_db || !CU.uid) return false;
+
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if(!sub) return false;
+
+    const plainSub = JSON.parse(JSON.stringify(sub));
+    const subRef = _db.ref(`push_subs/${CU.uid}`);
+    await subRef.set(plainSub);
+
+    const savedSnap = await subRef.once('value');
+    const savedSub = savedSnap.val();
+    if(!savedSub || savedSub.endpoint !== plainSub.endpoint) return false;
+
+    await _db.ref(`nudges/${CU.uid}`).push({
+      from: 'system',
+      fromName: '메구미링고',
+      message: '푸시 알림 구독이 완료되었습니다. 테스트 푸시를 보냈어요.',
+      ts: Date.now(),
+      type: 'pushSubscriptionVerified',
+    });
+
+    const res = await fetch(PUSH_SERVER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        subscription: savedSub,
+        title: '🔔 구독 완료',
+        body: '푸시 알림 구독이 정상 등록되었습니다.',
+        icon: '/japan-mission-study/megumi-icon.jpg',
+        tag: 'push-subscription-verified',
+        data: { url: '/japan-mission-study/' },
+      }),
+    });
+    return !!res.ok;
+  } catch(e) {
+    console.warn('Push subscription verify failed:', e);
+    return false;
   }
 }
 
